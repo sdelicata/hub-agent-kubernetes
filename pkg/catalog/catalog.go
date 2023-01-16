@@ -73,17 +73,9 @@ func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error
 		return nil, fmt.Errorf("compute spec hash: %w", err)
 	}
 
-	var domains []string
-	var urls []string
+	urls := []string{"https://" + e.Domain}
 	for _, customDomain := range e.CustomDomains {
-		domains = append(domains, customDomain)
 		urls = append(urls, "https://"+customDomain)
-	}
-
-	// As soon as a custom domain is provided we stop proposing the hub generated domain.
-	if len(domains) == 0 {
-		domains = []string{e.Domain}
-		urls = append(urls, "https://"+e.Domain)
 	}
 
 	return &hubv1alpha1.Catalog{
@@ -96,7 +88,7 @@ func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error
 		Status: hubv1alpha1.CatalogStatus{
 			Version:  e.Version,
 			SyncedAt: metav1.Now(),
-			Domains:  domains,
+			Domain:   e.Domain,
 			URLs:     strings.Join(urls, ","),
 			SpecHash: specHash,
 			Services: serviceStatuses,

@@ -70,6 +70,7 @@ func Test_WatcherRun(t *testing.T) {
 				{
 					Name:          "new-catalog",
 					Version:       "version-1",
+					Domain:        "majestic-beaver-123.hub-traefik.io",
 					CustomDomains: []string{"hello.example.com", "welcome.example.com"},
 					Services: []Service{
 						{PathPrefix: "/whoami-1", Name: "whoami-1", Namespace: "default", Port: 80},
@@ -95,8 +96,8 @@ func Test_WatcherRun(t *testing.T) {
 					},
 					Status: hubv1alpha1.CatalogStatus{
 						Version:  "version-1",
-						Domains:  []string{"hello.example.com", "welcome.example.com"},
-						URLs:     "https://hello.example.com,https://welcome.example.com",
+						Domain:   "majestic-beaver-123.hub-traefik.io",
+						URLs:     "https://majestic-beaver-123.hub-traefik.io,https://hello.example.com,https://welcome.example.com",
 						SpecHash: "HbhRY3LGNcaqKPJ+wmFo7lUwj5I=",
 						Services: []hubv1alpha1.CatalogServiceStatus{
 							{Name: "whoami-1", Namespace: "default"},
@@ -279,6 +280,7 @@ func Test_WatcherRun(t *testing.T) {
 				{
 					Name:          "catalog",
 					Version:       "version-2",
+					Domain:        "majestic-beaver-123.hub-traefik.io",
 					CustomDomains: []string{"hello.example.com"},
 					Services: []Service{
 						{PathPrefix: "/whoami-1", Name: "whoami-1", Namespace: "default", Port: 8080, OpenAPISpecURL: "http://hello.example.com/spec.json"},
@@ -303,8 +305,8 @@ func Test_WatcherRun(t *testing.T) {
 					},
 					Status: hubv1alpha1.CatalogStatus{
 						Version:  "version-1",
-						Domains:  []string{"hello.example.com"},
-						URLs:     "https://hello.example.com",
+						Domain:   "majestic-beaver-123.hub-traefik.io",
+						URLs:     "https://majestic-beaver-123.hub-traefik.io,https://hello.example.com",
 						SpecHash: "3oh1v5LUNVT5Xh01nzFNNyCTCTc=",
 						Services: []hubv1alpha1.CatalogServiceStatus{
 							{Name: "whoami-1", Namespace: "default"},
@@ -374,8 +376,8 @@ func Test_WatcherRun(t *testing.T) {
 					},
 					Status: hubv1alpha1.CatalogStatus{
 						Version:  "version-2",
-						Domains:  []string{"hello.example.com"},
-						URLs:     "https://hello.example.com",
+						Domain:   "majestic-beaver-123.hub-traefik.io",
+						URLs:     "https://majestic-beaver-123.hub-traefik.io,https://hello.example.com",
 						SpecHash: "JiNFWTDh2QN2UXI2axjtY21Zpf0=",
 						Services: []hubv1alpha1.CatalogServiceStatus{
 							{Name: "whoami-1", Namespace: "default", OpenAPISpecURL: "http://hello.example.com/spec.json"},

@@ -430,7 +430,7 @@ func (w *Watcher) buildIngress(namespace, name string, catalog *hubv1alpha1.Cata
 	}
 
 	var rules []netv1.IngressRule
-	for _, domain := range catalog.Status.Domains {
+	for _, domain := range catalog.Spec.CustomDomains {
 		rules = append(rules, netv1.IngressRule{
 			Host: domain,
 			IngressRuleValue: netv1.IngressRuleValue{
