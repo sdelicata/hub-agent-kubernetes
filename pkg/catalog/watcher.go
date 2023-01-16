@@ -51,12 +51,14 @@ type OASRegistry interface {
 
 // WatcherConfig holds the watcher configuration.
 type WatcherConfig struct {
-	CatalogSyncInterval      time.Duration
-	AgentNamespace           string
-	DevPortalServiceName     string
-	DevPortalPort            int
+	CatalogSyncInterval  time.Duration
+	AgentNamespace       string
+	DevPortalServiceName string
+	DevPortalPort        int
+	IngressClassName     string
+
 	TraefikCatalogEntryPoint string
-	IngressClassName         string
+	TraefikTunnelEntryPoint  string
 }
 
 // Watcher watches hub Catalogs and sync them with the cluster.
@@ -309,47 +311,56 @@ func (w *Watcher) upsertIngresses(ctx context.Context, catalog *hubv1alpha1.Cata
 	}
 
 	for namespace, services := range servicesByNamespace {
-		if err := w.upsertIngress(ctx, namespace, catalog, services); err != nil {
-			return fmt.Errorf("upsert catalog ingress for namespace %q: %w", namespace, err)
+		ingress, err := w.buildHubDomainIngress(namespace, catalog, services)
+		if err != nil {
+			return fmt.Errorf("build ingress for hub domain and namespace %q: %w", namespace, err)
+		}
+
+		if err = w.upsertIngress(ctx, ingress); err != nil {
+			return fmt.Errorf("upsert ingress for hub domain and namespace %q: %w", namespace, err)
+		}
+
+		if len(catalog.Spec.CustomDomains) != 0 {
+			ingress, err = w.buildCustomDomainsIngress(namespace, catalog, services)
+			if err != nil {
+				return fmt.Errorf("build ingress for custom domains and namespace %q: %w", namespace, err)
+			}
+
+			if err = w.upsertIngress(ctx, ingress); err != nil {
+				return fmt.Errorf("upsert ingress for custom domains and namespace %q: %w", namespace, err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func (w *Watcher) upsertIngress(ctx context.Context, namespace string, catalog *hubv1alpha1.Catalog, services []hubv1alpha1.CatalogService) error {
-	name, err := getIngressName(catalog.Name)
-	if err != nil {
-		return fmt.Errorf("get ingress name: %w", err)
-	}
-
-	existingIngress, err := w.kubeClientSet.NetworkingV1().Ingresses(namespace).Get(ctx, name, metav1.GetOptions{})
+func (w *Watcher) upsertIngress(ctx context.Context, ingress *netv1.Ingress) error {
+	existingIngress, err := w.kubeClientSet.NetworkingV1().Ingresses(ingress.Namespace).Get(ctx, ingress.Name, metav1.GetOptions{})
 	if err != nil && !kerror.IsNotFound(err) {
 		return fmt.Errorf("get ingress: %w", err)
 	}
 
 	if kerror.IsNotFound(err) {
-		newIngress := w.buildIngress(namespace, name, catalog, services)
-		_, err = w.kubeClientSet.NetworkingV1().Ingresses(namespace).Create(ctx, newIngress, metav1.CreateOptions{})
+		_, err = w.kubeClientSet.NetworkingV1().Ingresses(ingress.Namespace).Create(ctx, ingress, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("create ingress: %w", err)
 		}
 
 		log.Debug().
-			Str("name", newIngress.Name).
-			Str("namespace", newIngress.Namespace).
+			Str("name", ingress.Name).
+			Str("namespace", ingress.Namespace).
 			Msg("Ingress created")
 
 		return nil
 	}
 
-	updatedIngress := w.buildIngress(namespace, name, catalog, services)
-	existingIngress.Spec = updatedIngress.Spec
+	existingIngress.Spec = ingress.Spec
 	// Override Annotations and Labels in case new values are added in the future.
-	existingIngress.ObjectMeta.Annotations = updatedIngress.ObjectMeta.Annotations
-	existingIngress.ObjectMeta.Labels = updatedIngress.ObjectMeta.Labels
+	existingIngress.ObjectMeta.Annotations = ingress.ObjectMeta.Annotations
+	existingIngress.ObjectMeta.Labels = ingress.ObjectMeta.Labels
 
-	_, err = w.kubeClientSet.NetworkingV1().Ingresses(namespace).Update(ctx, updatedIngress, metav1.UpdateOptions{})
+	_, err = w.kubeClientSet.NetworkingV1().Ingresses(ingress.Namespace).Update(ctx, existingIngress, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("update ingress: %w", err)
 	}
@@ -369,9 +380,13 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, catalog *hubv1alpha1.Cat
 		return fmt.Errorf("list ingresses: %w", err)
 	}
 
-	catalogIngressName, err := getIngressName(catalog.Name)
+	hubDomainIngressName, err := getHubDomainIngressName(catalog.Name)
 	if err != nil {
-		return fmt.Errorf("get ingress name: %w", err)
+		return fmt.Errorf("get ingress name for hub domain: %w", err)
+	}
+	customDomainsIngressName, err := getCustomDomainsIngressName(catalog.Name)
+	if err != nil {
+		return fmt.Errorf("get ingress name for custom domains: %w", err)
 	}
 
 	catalogNamespaces := make(map[string]struct{})
@@ -380,7 +395,7 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, catalog *hubv1alpha1.Cat
 	}
 
 	for _, ingress := range hubIngresses {
-		if ingress.Name != catalogIngressName {
+		if ingress.Name != hubDomainIngressName || ingress.Name != customDomainsIngressName {
 			continue
 		}
 
@@ -406,11 +421,61 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, catalog *hubv1alpha1.Cat
 	return nil
 }
 
-func (w *Watcher) buildIngress(namespace, name string, catalog *hubv1alpha1.Catalog, services []hubv1alpha1.CatalogService) *netv1.Ingress {
-	annotations := map[string]string{
-		"traefik.ingress.kubernetes.io/router.entrypoints": w.config.TraefikCatalogEntryPoint,
+func (w *Watcher) buildHubDomainIngress(namespace string, catalog *hubv1alpha1.Catalog, services []hubv1alpha1.CatalogService) (*netv1.Ingress, error) {
+	name, err := getHubDomainIngressName(catalog.Name)
+	if err != nil {
+		return nil, fmt.Errorf("get hub domain ingress name: %w", err)
 	}
 
+	return &netv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "networking.k8s.io/v1",
+			APIVersion: "Ingress",
+		},
+		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikTunnelEntryPoint),
+		Spec:       w.buildIngressSpec([]string{catalog.Status.Domain}, services),
+	}, nil
+}
+
+func (w *Watcher) buildCustomDomainsIngress(namespace string, catalog *hubv1alpha1.Catalog, services []hubv1alpha1.CatalogService) (*netv1.Ingress, error) {
+	name, err := getCustomDomainsIngressName(catalog.Name)
+	if err != nil {
+		return nil, fmt.Errorf("get custom domains ingress name: %w", err)
+	}
+
+	return &netv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "networking.k8s.io/v1",
+			APIVersion: "Ingress",
+		},
+		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikCatalogEntryPoint),
+		Spec:       w.buildIngressSpec(catalog.Spec.CustomDomains, services),
+	}, nil
+}
+
+func (w *Watcher) buildIngressObjectMeta(namespace, name string, catalog *hubv1alpha1.Catalog, entrypoint string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      name,
+		Namespace: namespace,
+		Annotations: map[string]string{
+			"traefik.ingress.kubernetes.io/router.entrypoints": entrypoint,
+		},
+		Labels: map[string]string{
+			"app.kubernetes.io/managed-by": "traefik-hub",
+		},
+		// Set OwnerReference allow us to delete ingresses owned by a catalog.
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion: catalog.APIVersion,
+				Kind:       catalog.Kind,
+				Name:       catalog.Name,
+				UID:        catalog.UID,
+			},
+		},
+	}
+}
+
+func (w *Watcher) buildIngressSpec(domains []string, services []hubv1alpha1.CatalogService) netv1.IngressSpec {
 	pathType := netv1.PathTypePrefix
 
 	var paths []netv1.HTTPIngressPath
@@ -430,7 +495,7 @@ func (w *Watcher) buildIngress(namespace, name string, catalog *hubv1alpha1.Cata
 	}
 
 	var rules []netv1.IngressRule
-	for _, domain := range catalog.Spec.CustomDomains {
+	for _, domain := range domains {
 		rules = append(rules, netv1.IngressRule{
 			Host: domain,
 			IngressRuleValue: netv1.IngressRuleValue{
@@ -441,39 +506,29 @@ func (w *Watcher) buildIngress(namespace, name string, catalog *hubv1alpha1.Cata
 		})
 	}
 
-	return &netv1.Ingress{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "networking.k8s.io/v1",
-			APIVersion: "Ingress",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "traefik-hub",
-			},
-			// Set OwnerReference allow us to delete ingresses owned by a catalog.
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: catalog.APIVersion,
-					Kind:       catalog.Kind,
-					Name:       catalog.Name,
-					UID:        catalog.UID,
-				},
-			},
-		},
-		Spec: netv1.IngressSpec{
-			IngressClassName: pointer.StringPtr(w.config.IngressClassName),
-			Rules:            rules,
-		},
+	return netv1.IngressSpec{
+		IngressClassName: pointer.StringPtr(w.config.IngressClassName),
+		Rules:            rules,
 	}
 }
 
-// getIngressName compute the ingress name from the catalog name. The name follow this format:
+// getHubDomainIngressName compute the ingress name from the catalog name. The name follow this format:
+// {catalog-name}-hub-{hash(catalog-name)}
+// This hash is here to reduce the chance of getting a collision on an existing ingress.
+func getHubDomainIngressName(catalogName string) (string, error) {
+	hash := fnv.New32()
+
+	if _, err := hash.Write([]byte(catalogName)); err != nil {
+		return "", fmt.Errorf("generate hash: %w", err)
+	}
+
+	return fmt.Sprintf("%s-hub-%d", catalogName, hash.Sum32()), nil
+}
+
+// getCustomDomainsIngressName compute the ingress name from the catalog name. The name follow this format:
 // {catalog-name}-{hash(catalog-name)}
 // This hash is here to reduce the chance of getting a collision on an existing ingress.
-func getIngressName(catalogName string) (string, error) {
+func getCustomDomainsIngressName(catalogName string) (string, error) {
 	hash := fnv.New32()
 
 	if _, err := hash.Write([]byte(catalogName)); err != nil {
