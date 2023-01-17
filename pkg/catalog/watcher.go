@@ -38,6 +38,11 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	hubDomainSecretName          = "hub-certificate"
+	customDomainSecretNamePrefix = "hub-certificate-custom-domains"
+)
+
 // PlatformClient for the Catalog service.
 type PlatformClient interface {
 	GetCatalogs(ctx context.Context) ([]Catalog, error)
@@ -433,14 +438,19 @@ func (w *Watcher) buildHubDomainIngress(namespace string, catalog *hubv1alpha1.C
 			Kind:       "Ingress",
 		},
 		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikTunnelEntryPoint),
-		Spec:       w.buildIngressSpec([]string{catalog.Status.Domain}, services),
+		Spec:       w.buildIngressSpec([]string{catalog.Status.Domain}, services, hubDomainSecretName),
 	}, nil
 }
 
 func (w *Watcher) buildCustomDomainsIngress(namespace string, catalog *hubv1alpha1.Catalog, services []hubv1alpha1.CatalogService) (*netv1.Ingress, error) {
-	name, err := getCustomDomainsIngressName(catalog.Name)
+	ingressName, err := getCustomDomainsIngressName(catalog.Name)
 	if err != nil {
 		return nil, fmt.Errorf("get custom domains ingress name: %w", err)
+	}
+
+	secretName, err := getCustomDomainSecretName(catalog.Name)
+	if err != nil {
+		return nil, fmt.Errorf("get custom domains secret name: %w", err)
 	}
 
 	return &netv1.Ingress{
@@ -448,8 +458,8 @@ func (w *Watcher) buildCustomDomainsIngress(namespace string, catalog *hubv1alph
 			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
-		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikCatalogEntryPoint),
-		Spec:       w.buildIngressSpec(catalog.Spec.CustomDomains, services),
+		ObjectMeta: w.buildIngressObjectMeta(namespace, ingressName, catalog, w.config.TraefikCatalogEntryPoint),
+		Spec:       w.buildIngressSpec(catalog.Spec.CustomDomains, services, secretName),
 	}, nil
 }
 
@@ -458,6 +468,7 @@ func (w *Watcher) buildIngressObjectMeta(namespace, name string, catalog *hubv1a
 		Name:      name,
 		Namespace: namespace,
 		Annotations: map[string]string{
+			"traefik.ingress.kubernetes.io/router.tls":         "true",
 			"traefik.ingress.kubernetes.io/router.entrypoints": entrypoint,
 		},
 		Labels: map[string]string{
@@ -475,7 +486,7 @@ func (w *Watcher) buildIngressObjectMeta(namespace, name string, catalog *hubv1a
 	}
 }
 
-func (w *Watcher) buildIngressSpec(domains []string, services []hubv1alpha1.CatalogService) netv1.IngressSpec {
+func (w *Watcher) buildIngressSpec(domains []string, services []hubv1alpha1.CatalogService, tlsSecretName string) netv1.IngressSpec {
 	pathType := netv1.PathTypePrefix
 
 	var paths []netv1.HTTPIngressPath
@@ -509,6 +520,12 @@ func (w *Watcher) buildIngressSpec(domains []string, services []hubv1alpha1.Cata
 	return netv1.IngressSpec{
 		IngressClassName: pointer.StringPtr(w.config.IngressClassName),
 		Rules:            rules,
+		TLS: []netv1.IngressTLS{
+			{
+				Hosts:      domains,
+				SecretName: tlsSecretName,
+			},
+		},
 	}
 }
 
@@ -548,6 +565,19 @@ func getEdgeIngressPortalName(catalogName string) (string, error) {
 	// EdgeIngresses generate Ingresses with the same name. Therefore, to prevent any conflicts between the portal
 	// ingress and the catalog ingresses the term "-portal-" must be added in between.
 	return fmt.Sprintf("%s-%d-portal", catalogName, h), nil
+}
+
+// getCustomDomainSecretName compute the name of the secret storing the certificate of the custom domains.
+// The name follow this format: {customDomainSecretNamePrefix}-{hash(catalog-name)}
+// This hash is here to reduce the chance of getting a collision on an existing secret while staying under
+// the limit of 63 characters.
+func getCustomDomainSecretName(catalogName string) (string, error) {
+	h, err := hash(catalogName)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%d", customDomainSecretNamePrefix, h), nil
 }
 
 func hash(name string) (uint32, error) {
