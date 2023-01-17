@@ -395,7 +395,7 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, catalog *hubv1alpha1.Cat
 	}
 
 	for _, ingress := range hubIngresses {
-		if ingress.Name != hubDomainIngressName || ingress.Name != customDomainsIngressName {
+		if ingress.Name != hubDomainIngressName && ingress.Name != customDomainsIngressName {
 			continue
 		}
 
@@ -429,8 +429,8 @@ func (w *Watcher) buildHubDomainIngress(namespace string, catalog *hubv1alpha1.C
 
 	return &netv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "networking.k8s.io/v1",
-			APIVersion: "Ingress",
+			APIVersion: "networking.k8s.io/v1",
+			Kind:       "Ingress",
 		},
 		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikTunnelEntryPoint),
 		Spec:       w.buildIngressSpec([]string{catalog.Status.Domain}, services),
@@ -445,8 +445,8 @@ func (w *Watcher) buildCustomDomainsIngress(namespace string, catalog *hubv1alph
 
 	return &netv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "networking.k8s.io/v1",
-			APIVersion: "Ingress",
+			APIVersion: "networking.k8s.io/v1",
+			Kind:       "Ingress",
 		},
 		ObjectMeta: w.buildIngressObjectMeta(namespace, name, catalog, w.config.TraefikCatalogEntryPoint),
 		Spec:       w.buildIngressSpec(catalog.Spec.CustomDomains, services),
@@ -512,43 +512,50 @@ func (w *Watcher) buildIngressSpec(domains []string, services []hubv1alpha1.Cata
 	}
 }
 
-// getHubDomainIngressName compute the ingress name from the catalog name. The name follow this format:
-// {catalog-name}-hub-{hash(catalog-name)}
+// getHubDomainIngressName compute the ingress name for hub domain from the catalog name.
+// The name follow this format: {catalog-name}-{hash(catalog-name)}-hub
 // This hash is here to reduce the chance of getting a collision on an existing ingress.
 func getHubDomainIngressName(catalogName string) (string, error) {
-	hash := fnv.New32()
-
-	if _, err := hash.Write([]byte(catalogName)); err != nil {
-		return "", fmt.Errorf("generate hash: %w", err)
+	h, err := hash(catalogName)
+	if err != nil {
+		return "", err
 	}
 
-	return fmt.Sprintf("%s-hub-%d", catalogName, hash.Sum32()), nil
+	return fmt.Sprintf("%s-%d-hub", catalogName, h), nil
 }
 
-// getCustomDomainsIngressName compute the ingress name from the catalog name. The name follow this format:
-// {catalog-name}-{hash(catalog-name)}
+// getCustomDomainsIngressName compute the ingress name for custom domains from the catalog name.
+// The name follow this format: {catalog-name}-{hash(catalog-name)}
 // This hash is here to reduce the chance of getting a collision on an existing ingress.
 func getCustomDomainsIngressName(catalogName string) (string, error) {
-	hash := fnv.New32()
-
-	if _, err := hash.Write([]byte(catalogName)); err != nil {
-		return "", fmt.Errorf("generate hash: %w", err)
+	h, err := hash(catalogName)
+	if err != nil {
+		return "", err
 	}
 
-	return fmt.Sprintf("%s-%d", catalogName, hash.Sum32()), nil
+	return fmt.Sprintf("%s-%d", catalogName, h), nil
 }
 
-// getEdgeIngressPortalName compute the edge ingress portal name from the catalog name. The name follow this format:
-// {catalog-name}-portal-{hash(catalog-name)}
+// getEdgeIngressPortalName compute the edge ingress portal name from the catalog name.
+// The name follow this format: {catalog-name}-{hash(catalog-name)}-portal
 // This hash is here to reduce the chance of getting a collision on an existing ingress.
 func getEdgeIngressPortalName(catalogName string) (string, error) {
-	hash := fnv.New32()
-
-	if _, err := hash.Write([]byte(catalogName)); err != nil {
-		return "", fmt.Errorf("generate hash: %w", err)
+	h, err := hash(catalogName)
+	if err != nil {
+		return "", err
 	}
 
 	// EdgeIngresses generate Ingresses with the same name. Therefore, to prevent any conflicts between the portal
 	// ingress and the catalog ingresses the term "-portal-" must be added in between.
-	return fmt.Sprintf("%s-portal-%d", catalogName, hash.Sum32()), nil
+	return fmt.Sprintf("%s-%d-portal", catalogName, h), nil
+}
+
+func hash(name string) (uint32, error) {
+	h := fnv.New32()
+
+	if _, err := h.Write([]byte(name)); err != nil {
+		return 0, fmt.Errorf("generate hash: %w", err)
+	}
+
+	return h.Sum32(), nil
 }
