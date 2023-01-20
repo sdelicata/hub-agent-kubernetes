@@ -30,6 +30,7 @@ import (
 	hubv1alpha1 "github.com/traefik/hub-agent-kubernetes/pkg/crd/api/hub/v1alpha1"
 	hubkubemock "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/clientset/versioned/fake"
 	hubinformer "github.com/traefik/hub-agent-kubernetes/pkg/crd/generated/client/hub/informers/externalversions"
+	"github.com/traefik/hub-agent-kubernetes/pkg/edgeingress"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,7 @@ func Test_WatcherRun(t *testing.T) {
 		},
 	}
 
-	namespaces := []string{"default", "my-ns"}
+	namespaces := []string{"agent-ns", "default", "my-ns"}
 
 	tests := []struct {
 		desc             string
@@ -61,10 +62,12 @@ func Test_WatcherRun(t *testing.T) {
 
 		clusterCatalogs  string
 		clusterIngresses string
+		clusterSecrets   string
 
 		wantCatalogs      string
 		wantIngresses     string
 		wantEdgeIngresses string
+		wantSecrets       string
 	}{
 		{
 			desc: "new catalog present on the platform needs to be created on the cluster",
@@ -84,6 +87,7 @@ func Test_WatcherRun(t *testing.T) {
 			wantCatalogs:      "testdata/new-catalog/want.catalogs.yaml",
 			wantIngresses:     "testdata/new-catalog/want.ingresses.yaml",
 			wantEdgeIngresses: "testdata/new-catalog/want.edge-ingresses.yaml",
+			wantSecrets:       "testdata/new-catalog/want.secrets.yaml",
 		},
 		{
 			desc: "a catalog has been updated on the platform: last service from a namespace deleted",
@@ -101,9 +105,11 @@ func Test_WatcherRun(t *testing.T) {
 			},
 			clusterCatalogs:   "testdata/updated-catalog-service-deleted/catalogs.yaml",
 			clusterIngresses:  "testdata/updated-catalog-service-deleted/ingresses.yaml",
+			clusterSecrets:    "testdata/updated-catalog-service-deleted/secrets.yaml",
 			wantCatalogs:      "testdata/updated-catalog-service-deleted/want.catalogs.yaml",
 			wantEdgeIngresses: "testdata/updated-catalog-service-deleted/want.edge-ingresses.yaml",
 			wantIngresses:     "testdata/updated-catalog-service-deleted/want.ingresses.yaml",
+			wantSecrets:       "testdata/updated-catalog-service-deleted/want.secrets.yaml",
 		},
 		{
 			desc: "a catalog has been updated on the platform: new service in new namespace added",
@@ -121,9 +127,11 @@ func Test_WatcherRun(t *testing.T) {
 			},
 			clusterCatalogs:   "testdata/updated-catalog-service-added/catalogs.yaml",
 			clusterIngresses:  "testdata/updated-catalog-service-added/ingresses.yaml",
+			clusterSecrets:    "testdata/updated-catalog-service-added/secrets.yaml",
 			wantCatalogs:      "testdata/updated-catalog-service-added/want.catalogs.yaml",
 			wantEdgeIngresses: "testdata/updated-catalog-service-added/want.edge-ingresses.yaml",
 			wantIngresses:     "testdata/updated-catalog-service-added/want.ingresses.yaml",
+			wantSecrets:       "testdata/updated-catalog-service-added/want.secrets.yaml",
 		},
 	}
 
@@ -131,17 +139,22 @@ func Test_WatcherRun(t *testing.T) {
 		test := test
 
 		t.Run(test.desc, func(t *testing.T) {
+			wantCatalogs := loadFixtures[hubv1alpha1.Catalog](t, test.wantCatalogs)
 			wantIngresses := loadFixtures[netv1.Ingress](t, test.wantIngresses)
 			wantEdgeIngresses := loadFixtures[hubv1alpha1.EdgeIngress](t, test.wantEdgeIngresses)
-			wantCatalogs := loadFixtures[hubv1alpha1.Catalog](t, test.wantCatalogs)
+			wantSecrets := loadFixtures[corev1.Secret](t, test.wantSecrets)
 
-			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
 			clusterCatalogs := loadFixtures[hubv1alpha1.Catalog](t, test.clusterCatalogs)
+			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
+			clusterSecrets := loadFixtures[corev1.Secret](t, test.clusterSecrets)
 
 			var kubeObjects []runtime.Object
 			kubeObjects = append(kubeObjects, services...)
 			for _, clusterIngress := range clusterIngresses {
 				kubeObjects = append(kubeObjects, clusterIngress.DeepCopy())
+			}
+			for _, secret := range clusterSecrets {
+				kubeObjects = append(kubeObjects, secret.DeepCopy())
 			}
 
 			var hubObjects []runtime.Object
@@ -176,6 +189,16 @@ func Test_WatcherRun(t *testing.T) {
 					cancel()
 				}
 			})
+			client.OnGetWildcardCertificate().
+				TypedReturns(edgeingress.Certificate{
+					Certificate: []byte("cert"),
+					PrivateKey:  []byte("private"),
+				}, nil)
+			client.OnGetCertificateByDomains(test.platformCatalogs[0].CustomDomains).
+				TypedReturns(edgeingress.Certificate{
+					Certificate: []byte("cert"),
+					PrivateKey:  []byte("private"),
+				}, nil)
 
 			oasCh := make(chan struct{})
 			oasRegistry := newOasRegistryMock(t)
@@ -192,16 +215,24 @@ func Test_WatcherRun(t *testing.T) {
 				Maybe()
 
 			w := NewWatcher(client, oasRegistry, kubeClientSet, kubeInformer, hubClientSet, hubInformer, WatcherConfig{
-				CatalogSyncInterval:      time.Millisecond,
-				AgentNamespace:           "agent-ns",
-				DevPortalServiceName:     "dev-portal-service-name",
 				IngressClassName:         "ingress-class",
+				AgentNamespace:           "agent-ns",
 				TraefikCatalogEntryPoint: "catalog-entrypoint",
 				TraefikTunnelEntryPoint:  "tunnel-entrypoint",
+				DevPortalServiceName:     "dev-portal-service-name",
 				DevPortalPort:            8080,
+				CatalogSyncInterval:      time.Millisecond,
+				CertSyncInterval:         time.Millisecond,
+				CertRetryInterval:        time.Millisecond,
 			})
 
-			w.Run(ctx)
+			stop := make(chan struct{})
+			go func() {
+				w.Run(ctx)
+				close(stop)
+			}()
+
+			<-stop
 
 			catalogList, err := hubClientSet.HubV1alpha1().Catalogs().List(ctx, metav1.ListOptions{})
 			require.NoError(t, err)
@@ -229,9 +260,21 @@ func Test_WatcherRun(t *testing.T) {
 			edgeIngresses, err := hubClientSet.HubV1alpha1().EdgeIngresses("agent-ns").List(ctx, metav1.ListOptions{})
 			require.NoError(t, err)
 
+			var secrets []corev1.Secret
+			for _, namespace := range namespaces {
+				var namespaceSecretList *corev1.SecretList
+				namespaceSecretList, err = kubeClientSet.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
+				require.NoError(t, err)
+
+				for _, secret := range namespaceSecretList.Items {
+					secrets = append(secrets, secret)
+				}
+			}
+
 			assert.ElementsMatch(t, wantCatalogs, catalogs)
 			assert.ElementsMatch(t, wantIngresses, ingresses)
 			assert.ElementsMatch(t, wantEdgeIngresses, edgeIngresses.Items)
+			assert.ElementsMatch(t, wantSecrets, secrets)
 		})
 	}
 }
@@ -254,6 +297,8 @@ func TestWatcher_Run_OASRegistryUpdated(t *testing.T) {
 	kubeInformer.WaitForCacheSync(ctx.Done())
 
 	client := newPlatformClientMock(t)
+
+	client.OnGetWildcardCertificate().TypedReturns(edgeingress.Certificate{}, nil).Once()
 
 	// Do nothing on the first sync catalogs.
 	client.OnGetCatalogs().TypedReturns([]Catalog{}, nil).Once()

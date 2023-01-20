@@ -129,7 +129,7 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 				SyncedAt: now,
 				URLs:     "https://majestic-beaver-123.hub-traefik.io,https://foo.example.com,https://bar.example.com",
 				Domain:   "majestic-beaver-123.hub-traefik.io",
-				SpecHash: "kzeBNy1NCJnw3rhb7XarvvgWloc=",
+				SpecHash: "Sz6cVxZ70Qm0el1CHhSpsbou92U=",
 				Services: []hubv1alpha1.CatalogServiceStatus{
 					{
 						Name:           "whoami",
@@ -310,7 +310,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 				SyncedAt: now,
 				Domain:   "majestic-beaver-123.hub-traefik.io",
 				URLs:     "https://majestic-beaver-123.hub-traefik.io,https://foo.example.com",
-				SpecHash: "DMuQdfKN8K4d6dEPyQPSnIBBQro=",
+				SpecHash: "rOG0fFXyK3/sUYGqjggW/ix7rFc=",
 				Services: []hubv1alpha1.CatalogServiceStatus{
 					{
 						Name:           "new-whoami",

@@ -46,9 +46,9 @@ type Catalog struct {
 type Service = hubv1alpha1.CatalogService
 
 // Resource builds the v1alpha1 EdgeIngress resource.
-func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error) {
+func (c *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error) {
 	var serviceStatuses []hubv1alpha1.CatalogServiceStatus
-	for _, svc := range e.Services {
+	for _, svc := range c.Services {
 		svc := svc
 
 		openAPISpecURL := svc.OpenAPISpecURL
@@ -64,8 +64,8 @@ func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error
 	}
 
 	spec := hubv1alpha1.CatalogSpec{
-		CustomDomains: e.CustomDomains,
-		Services:      e.Services,
+		CustomDomains: c.CustomDomains,
+		Services:      c.Services,
 	}
 
 	specHash, err := spec.Hash()
@@ -73,8 +73,8 @@ func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error
 		return nil, fmt.Errorf("compute spec hash: %w", err)
 	}
 
-	urls := []string{"https://" + e.Domain}
-	for _, customDomain := range e.CustomDomains {
+	urls := []string{"https://" + c.Domain}
+	for _, customDomain := range c.CustomDomains {
 		urls = append(urls, "https://"+customDomain)
 	}
 
@@ -83,12 +83,12 @@ func (e *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error
 			APIVersion: "hub.traefik.io/v1alpha1",
 			Kind:       "Catalog",
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: e.Name},
+		ObjectMeta: metav1.ObjectMeta{Name: c.Name},
 		Spec:       spec,
 		Status: hubv1alpha1.CatalogStatus{
-			Version:  e.Version,
+			Version:  c.Version,
 			SyncedAt: metav1.Now(),
-			Domain:   e.Domain,
+			Domain:   c.Domain,
 			URLs:     strings.Join(urls, ","),
 			SpecHash: specHash,
 			Services: serviceStatuses,

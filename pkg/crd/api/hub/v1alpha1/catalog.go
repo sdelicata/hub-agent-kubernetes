@@ -50,7 +50,7 @@ type Catalog struct {
 type CatalogSpec struct {
 	// CustomDomains are the custom domains under which the API will be exposed.
 	// +optional
-	CustomDomains []string `yaml:"customDomains,omitempty"`
+	CustomDomains []string `json:"customDomains,omitempty"`
 	// Services are the list of Services available in the Catalog.
 	Services []CatalogService `json:"services,omitempty"`
 }

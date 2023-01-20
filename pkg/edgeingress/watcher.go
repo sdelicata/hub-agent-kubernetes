@@ -57,8 +57,8 @@ type PlatformClient interface {
 // WatcherConfig holds the watcher configuration.
 type WatcherConfig struct {
 	IngressClassName        string
-	TraefikTunnelEntryPoint string
 	AgentNamespace          string
+	TraefikTunnelEntryPoint string
 
 	EdgeIngressSyncInterval time.Duration
 	CertRetryInterval       time.Duration
@@ -153,12 +153,12 @@ func (w *Watcher) syncCertificates(ctx context.Context) error {
 	w.wildCardCert = certificate
 	w.wildCardCertMu.Unlock()
 
-	platformEdgeIngresses, err := w.hubInformer.Hub().V1alpha1().EdgeIngresses().Lister().List(labels.Everything())
+	clusterEdgeIngresses, err := w.hubInformer.Hub().V1alpha1().EdgeIngresses().Lister().List(labels.Everything())
 	if err != nil {
 		return err
 	}
 
-	for _, edgeIngress := range platformEdgeIngresses {
+	for _, edgeIngress := range clusterEdgeIngresses {
 		err := w.setupCertificates(ctx, edgeIngress, certificate, edgeIngress.Status.CustomDomains)
 		if err != nil {
 			log.Error().Err(err).
@@ -412,6 +412,10 @@ func (w *Watcher) upsertSecret(ctx context.Context, cert Certificate, name, name
 
 	if kerror.IsNotFound(err) {
 		secret = &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "core.k8s.io/v1",
+				Kind:       "Secret",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,

@@ -171,12 +171,15 @@ func webhookAdmission(ctx context.Context, cliCtx *cli.Context, platformClient *
 	}
 
 	catalogWatcherCfg := catalog.WatcherConfig{
-		CatalogSyncInterval:      time.Minute,
+		IngressClassName:         cliCtx.String(flagIngressClassName),
 		AgentNamespace:           currentNamespace(),
+		TraefikCatalogEntryPoint: cliCtx.String(flagTraefikCatalogEntryPoint),
+		TraefikTunnelEntryPoint:  cliCtx.String(flagTraefikTunnelEntryPoint),
 		DevPortalServiceName:     cliCtx.String(flagDevPortalServiceName),
 		DevPortalPort:            cliCtx.Int(flagDevPortalPort),
-		TraefikCatalogEntryPoint: cliCtx.String(flagTraefikCatalogEntryPoint),
-		IngressClassName:         cliCtx.String(flagIngressClassName),
+		CatalogSyncInterval:      time.Minute,
+		CertSyncInterval:         time.Hour,
+		CertRetryInterval:        time.Minute,
 	}
 
 	acpAdmission, edgeIngressAdmission, catalogAdmission, err := setupAdmissionHandlers(ctx, platformClient, topoWatch, authServerAddr, edgeIngressWatcherCfg, catalogWatcherCfg)

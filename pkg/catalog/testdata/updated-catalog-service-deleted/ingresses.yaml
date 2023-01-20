@@ -11,6 +11,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: traefik-hub
   annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: tunnel-entrypoint
 spec:
   ingressClassName: ingress-class
@@ -32,6 +33,10 @@ spec:
                 name: whoami-2
                 port:
                   number: 8080
+  tls:
+    - secretName: hub-certificate
+      hosts:
+        - majestic-beaver-123.hub-traefik.io
 
 ---
 
@@ -48,6 +53,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: traefik-hub
   annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: tunnel-entrypoint
 spec:
   ingressClassName: ingress-class
@@ -62,6 +68,10 @@ spec:
                 name: whoami-3
                 port:
                   number: 8080
+  tls:
+    - secretName: hub-certificate
+      hosts:
+        - majestic-beaver-123.hub-traefik.io
 
 ---
 
@@ -78,6 +88,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: traefik-hub
   annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: catalog-entrypoint
 spec:
   ingressClassName: ingress-class
@@ -99,6 +110,10 @@ spec:
                 name: whoami-2
                 port:
                   number: 8080
+  tls:
+    - secretName: hub-certificate-custom-domains-1680030486
+      hosts:
+        - hello.example.com
 
 ---
 # Ingress for custom domains in the my-ns namespace.
@@ -114,6 +129,7 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: traefik-hub
   annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: catalog-entrypoint
 spec:
   ingressClassName: ingress-class
@@ -128,3 +144,7 @@ spec:
                 name: whoami-3
                 port:
                   number: 8080
+  tls:
+    - secretName: hub-certificate-custom-domains-1680030486
+      hosts:
+        - hello.example.com
