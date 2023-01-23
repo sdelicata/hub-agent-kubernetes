@@ -103,6 +103,7 @@ func (w *Watcher) Run(ctx context.Context) {
 		log.Error().Err(err).Msg("Unable to synchronize certificates with platform")
 		certSyncInterval = time.After(w.config.CertRetryInterval)
 	}
+	w.syncEdgeIngresses(ctxSync)
 	cancel()
 
 	for {
