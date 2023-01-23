@@ -214,7 +214,7 @@ func Test_WatcherRun(t *testing.T) {
 				TypedReturns("").
 				Maybe()
 
-			w := NewWatcher(client, oasRegistry, kubeClientSet, kubeInformer, hubClientSet, hubInformer, WatcherConfig{
+			w := NewWatcher(client, oasRegistry, kubeClientSet, kubeInformer, hubClientSet, hubInformer, &WatcherConfig{
 				IngressClassName:         "ingress-class",
 				AgentNamespace:           "agent-ns",
 				TraefikCatalogEntryPoint: "catalog-entrypoint",
@@ -266,9 +266,7 @@ func Test_WatcherRun(t *testing.T) {
 				namespaceSecretList, err = kubeClientSet.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{})
 				require.NoError(t, err)
 
-				for _, secret := range namespaceSecretList.Items {
-					secrets = append(secrets, secret)
-				}
+				secrets = append(secrets, namespaceSecretList.Items...)
 			}
 
 			assert.ElementsMatch(t, wantCatalogs, catalogs)
@@ -317,7 +315,7 @@ func TestWatcher_Run_OASRegistryUpdated(t *testing.T) {
 	oasRegistry := newOasRegistryMock(t)
 	oasRegistry.OnUpdated().TypedReturns(oasCh)
 
-	w := NewWatcher(client, oasRegistry, kubeClientSet, kubeInformer, hubClientSet, hubInformer, WatcherConfig{
+	w := NewWatcher(client, oasRegistry, kubeClientSet, kubeInformer, hubClientSet, hubInformer, &WatcherConfig{
 		IngressClassName:         "ingress-class",
 		TraefikCatalogEntryPoint: "entrypoint",
 		// Very high interval to prevent the ticker from firing.

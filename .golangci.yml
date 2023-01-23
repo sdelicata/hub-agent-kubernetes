@@ -237,3 +237,6 @@ issues:
     - path: pkg/platform/client_test.go
       linters:
         - gocognit
+    - path: pkg/catalog/watcher_test.go
+      linters:
+        - gocognit

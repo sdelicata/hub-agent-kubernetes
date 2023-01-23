@@ -45,7 +45,7 @@ type Catalog struct {
 // Service is a service within a catalog.
 type Service = hubv1alpha1.CatalogService
 
-// Resource builds the v1alpha1 EdgeIngress resource.
+// Resource builds the v1alpha1 Catalog resource.
 func (c *Catalog) Resource(oasRegistry OASRegistry) (*hubv1alpha1.Catalog, error) {
 	var serviceStatuses []hubv1alpha1.CatalogServiceStatus
 	for _, svc := range c.Services {

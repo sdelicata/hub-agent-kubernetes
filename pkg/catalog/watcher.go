@@ -77,7 +77,7 @@ type WatcherConfig struct {
 
 // Watcher watches hub Catalogs and sync them with the cluster.
 type Watcher struct {
-	config WatcherConfig
+	config *WatcherConfig
 
 	wildCardCert   edgeingress.Certificate
 	wildCardCertMu sync.RWMutex
@@ -93,7 +93,7 @@ type Watcher struct {
 }
 
 // NewWatcher returns a new Watcher.
-func NewWatcher(client PlatformClient, oasRegistry OASRegistry, kubeClientSet clientset.Interface, kubeInformer informers.SharedInformerFactory, hubClientSet hubclientset.Interface, hubInformer hubinformer.SharedInformerFactory, config WatcherConfig) *Watcher {
+func NewWatcher(client PlatformClient, oasRegistry OASRegistry, kubeClientSet clientset.Interface, kubeInformer informers.SharedInformerFactory, hubClientSet hubclientset.Interface, hubInformer hubinformer.SharedInformerFactory, config *WatcherConfig) *Watcher {
 	return &Watcher{
 		config: config,
 
@@ -243,7 +243,7 @@ func (w *Watcher) upsertSecret(ctx context.Context, cert edgeingress.Certificate
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
-				Annotations: map[string]string{
+				Labels: map[string]string{
 					"app.kubernetes.io/managed-by": "traefik-hub",
 				},
 			},
@@ -584,7 +584,7 @@ func (w *Watcher) upsertIngress(ctx context.Context, ingress *netv1.Ingress) err
 	return nil
 }
 
-// cleanupIngresses deletes ingresses from namespaces that are no longer referenced in the catalog.
+// cleanupIngresses deletes the ingresses from namespaces that are no longer referenced in the catalog.
 func (w *Watcher) cleanupIngresses(ctx context.Context, catalog *hubv1alpha1.Catalog) error {
 	managedByHub, err := labels.NewRequirement("app.kubernetes.io/managed-by", selection.Equals, []string{"traefik-hub"})
 	if err != nil {
