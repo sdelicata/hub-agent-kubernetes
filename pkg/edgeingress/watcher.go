@@ -419,7 +419,7 @@ func (w *Watcher) upsertSecret(ctx context.Context, cert Certificate, name, name
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
-				Annotations: map[string]string{
+				Labels: map[string]string{
 					"app.kubernetes.io/managed-by": "traefik-hub",
 				},
 			},
