@@ -320,6 +320,8 @@ func TestWatcher_Run_OASRegistryUpdated(t *testing.T) {
 		TraefikCatalogEntryPoint: "entrypoint",
 		// Very high interval to prevent the ticker from firing.
 		CatalogSyncInterval: time.Hour,
+		CertSyncInterval:    time.Hour,
+		CertRetryInterval:   time.Hour,
 	})
 
 	w.Run(ctx)
