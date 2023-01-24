@@ -79,8 +79,8 @@ type WatcherConfig struct {
 type Watcher struct {
 	config *WatcherConfig
 
-	wildCardCert   edgeingress.Certificate
 	wildCardCertMu sync.RWMutex
+	wildCardCert   edgeingress.Certificate
 
 	platform    PlatformClient
 	oasRegistry OASRegistry
@@ -194,14 +194,13 @@ func (w *Watcher) syncCertificates(ctx context.Context) error {
 }
 
 func (w *Watcher) setupCertificates(ctx context.Context, catalog *hubv1alpha1.Catalog, certificate edgeingress.Certificate) error {
-	var servicesNamespaces []string
+	servicesNamespaces := make(map[string]struct{})
 	for _, service := range catalog.Spec.Services {
-		servicesNamespaces = appendNamespace(servicesNamespaces, service.Namespace)
-	}
-
-	for _, namespace := range servicesNamespaces {
-		if err := w.upsertSecret(ctx, certificate, hubDomainSecretName, namespace, catalog); err != nil {
-			return fmt.Errorf("upsert secret: %w", err)
+		if _, found := servicesNamespaces[service.Namespace]; !found {
+			if err := w.upsertSecret(ctx, certificate, hubDomainSecretName, service.Namespace, catalog); err != nil {
+				return fmt.Errorf("upsert secret: %w", err)
+			}
+			servicesNamespaces[service.Namespace] = struct{}{}
 		}
 	}
 
@@ -219,7 +218,7 @@ func (w *Watcher) setupCertificates(ctx context.Context, catalog *hubv1alpha1.Ca
 		return fmt.Errorf("get custom domains secret name: %w", err)
 	}
 
-	for _, namespace := range servicesNamespaces {
+	for namespace := range servicesNamespaces {
 		if err := w.upsertSecret(ctx, cert, secretName, namespace, catalog); err != nil {
 			return fmt.Errorf("upsert secret: %w", err)
 		}
@@ -315,16 +314,6 @@ func appendOwnerReference(references []metav1.OwnerReference, ref metav1.OwnerRe
 	}
 
 	return append(references, ref)
-}
-
-func appendNamespace(namespaces []string, namespace string) []string {
-	for _, ns := range namespaces {
-		if ns == namespace {
-			return namespaces
-		}
-	}
-
-	return append(namespaces, namespace)
 }
 
 func (w *Watcher) syncCatalogs(ctx context.Context) {
