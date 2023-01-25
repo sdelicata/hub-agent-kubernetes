@@ -777,7 +777,7 @@ func getEdgeIngressPortalName(catalogName string) (string, error) {
 	}
 
 	// EdgeIngresses generate Ingresses with the same name. Therefore, to prevent any conflicts between the portal
-	// ingress and the catalog ingresses the term "-portal-" must be added in between.
+	// ingress and the catalog ingresses the term "-portal" must be added as a suffix.
 	return fmt.Sprintf("%s-%d-portal", catalogName, h), nil
 }
 
