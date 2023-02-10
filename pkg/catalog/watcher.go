@@ -563,7 +563,7 @@ func (w *Watcher) setupStripPrefixMiddleware(ctx context.Context, catalog *hubv1
 		return "", fmt.Errorf("get middleware: %w", existingErr)
 	}
 
-	middleware := w.newMiddleware(name, namespace, services)
+	middleware := newStripPrefixMiddleware(name, namespace, services)
 
 	traefikMiddlewareName, err := getTraefikStripPrefixMiddlewareName(namespace, catalog)
 	if err != nil {
@@ -596,33 +596,6 @@ func (w *Watcher) setupStripPrefixMiddleware(ctx context.Context, catalog *hubv1
 	}
 
 	return traefikMiddlewareName, nil
-}
-
-func (w *Watcher) newMiddleware(name, namespace string, services []Service) traefikv1alpha1.Middleware {
-	var prefixes []string
-	for _, service := range services {
-		prefixes = append(prefixes, service.PathPrefix)
-	}
-	sort.Slice(prefixes, func(i, j int) bool {
-		return len(prefixes[i]) > len(prefixes[j])
-	})
-
-	return traefikv1alpha1.Middleware{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Middleware",
-			APIVersion: "traefik.containo.us/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: traefikv1alpha1.MiddlewareSpec{
-			StripPrefix: &traefikv1alpha1.StripPrefix{
-				Prefixes:   prefixes,
-				ForceSlash: false,
-			},
-		},
-	}
 }
 
 func (w *Watcher) upsertIngress(ctx context.Context, ingress *netv1.Ingress) error {
@@ -908,6 +881,33 @@ func getCustomDomainSecretName(catalogName string) (string, error) {
 	return fmt.Sprintf("%s-%d", customDomainSecretNamePrefix, h), nil
 }
 
+func newStripPrefixMiddleware(name, namespace string, services []Service) traefikv1alpha1.Middleware {
+	var prefixes []string
+	for _, service := range services {
+		prefixes = append(prefixes, service.PathPrefix)
+	}
+	sort.Slice(prefixes, func(i, j int) bool {
+		return len(prefixes[i]) > len(prefixes[j])
+	})
+
+	return traefikv1alpha1.Middleware{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Middleware",
+			APIVersion: "traefik.containo.us/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: traefikv1alpha1.MiddlewareSpec{
+			StripPrefix: &traefikv1alpha1.StripPrefix{
+				Prefixes:   prefixes,
+				ForceSlash: false,
+			},
+		},
+	}
+}
+
 // getStripPrefixMiddlewareName compute the name of the stripPrefix middleware.
 // The name follow this format: {{catalog-name}-hash({catalog-name})-stripprefix}
 // This hash is here to reduce the chance of getting a collision on an existing secret while staying under
@@ -918,7 +918,7 @@ func getStripPrefixMiddlewareName(catalogName string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s-%d-%s", catalogName, h, "stripprefix"), nil
+	return fmt.Sprintf("%s-%d-stripprefix", catalogName, h), nil
 }
 
 func getTraefikStripPrefixMiddlewareName(namespace string, catalog *hubv1alpha1.Catalog) (string, error) {
