@@ -276,8 +276,8 @@ func TestWatcher_OnUpdate_getSpec(t *testing.T) {
 	require.NoError(t, err)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		_, err = rw.Write(oasSpec)
-		require.NoError(t, err)
+		_, writeErr := rw.Write(oasSpec)
+		require.NoError(t, writeErr)
 	}))
 
 	switcher := NewHandlerSwitcher()
@@ -295,9 +295,10 @@ func TestWatcher_OnUpdate_getSpec(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	catalog.Spec.Services = append(catalog.Spec.Services, hubv1alpha1.CatalogService{
-		Name:      "svc2",
-		Namespace: "ns",
-		Port:      80,
+		Name:       "svc2",
+		Namespace:  "ns",
+		Port:       80,
+		PathPrefix: "/prefix",
 	})
 
 	serviceStatuses := []hubv1alpha1.CatalogServiceStatus{
@@ -423,7 +424,7 @@ func createCatalog(openAPISpecURL string) *hubv1alpha1.Catalog {
 					Name:           "svc",
 					Namespace:      "ns",
 					Port:           80,
-					PathPrefix:     "",
+					PathPrefix:     "/prefix",
 					OpenAPISpecURL: openAPISpecURL,
 				},
 			},

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://generated.hub.domain"
+      "url": "https://generated.hub.domain/api/v3/prefix"
     }
   ],
   "paths": {

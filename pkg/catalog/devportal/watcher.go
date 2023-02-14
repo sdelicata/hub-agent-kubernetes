@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -272,10 +273,12 @@ func (w *Watcher) buildRoute(name string, c *catalog.Catalog) http.Handler {
 	var services []string
 
 	urlByName := map[string]string{}
+	pathPrefixByName := map[string]string{}
 	for _, service := range c.Services {
 		key := service.Name + "@" + service.Namespace
 		services = append(services, key)
 		urlByName[key] = service.OpenAPISpecURL
+		pathPrefixByName[key] = service.PathPrefix
 	}
 
 	router := chi.NewRouter()
@@ -351,7 +354,15 @@ func (w *Watcher) buildRoute(name string, c *catalog.Catalog) http.Handler {
 			return
 		}
 
-		overrideServersAndSecurity(&oas, c)
+		if err := overrideServersAndSecurity(&oas, c, pathPrefixByName[svcName]); err != nil {
+			log.Error().Err(err).
+				Str("catalog_name", name).
+				Str("service_name", svcName).
+				Str("url", u).
+				Msg("Override servers and security")
+
+			return
+		}
 
 		rw.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 		rw.WriteHeader(http.StatusOK)
@@ -367,14 +378,23 @@ func (w *Watcher) buildRoute(name string, c *catalog.Catalog) http.Handler {
 	return router
 }
 
-func overrideServersAndSecurity(oas *openapi3.T, c *catalog.Catalog) {
+func overrideServersAndSecurity(oas *openapi3.T, c *catalog.Catalog, servicePathPrefix string) error {
+	var existingPath string
+	if len(oas.Servers) != 0 {
+		u, err := url.Parse(oas.Servers[0].URL)
+		if err != nil {
+			return fmt.Errorf("parse url: %w", err)
+		}
+		existingPath = u.Path
+	}
+
 	oas.Servers = nil
 	for _, domain := range c.CustomDomains {
-		oas.Servers = append(oas.Servers, &openapi3.Server{URL: "https://" + domain.Name})
+		oas.Servers = append(oas.Servers, &openapi3.Server{URL: "https://" + domain.Name + existingPath + servicePathPrefix})
 	}
 
 	if len(oas.Servers) == 0 {
-		oas.Servers = openapi3.Servers{{URL: "https://" + c.Domain}}
+		oas.Servers = append(oas.Servers, &openapi3.Server{URL: "https://" + c.Domain + existingPath + servicePathPrefix})
 	}
 
 	oas.Security = nil
@@ -390,4 +410,6 @@ func overrideServersAndSecurity(oas *openapi3.T, c *catalog.Catalog) {
 			oas.Paths[i].SetOperation(method, operation)
 		}
 	}
+
+	return nil
 }
