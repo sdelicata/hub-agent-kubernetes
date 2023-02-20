@@ -6,10 +6,10 @@
   },
   "servers": [
     {
-      "url": "https://customdomain.com/api/v3/prefix"
+      "url": "https://customdomain.com/prefix/base-path"
     },
     {
-      "url": "https://secondcustomdomain.com/api/v3/prefix"
+      "url": "https://secondcustomdomain.com/prefix/base-path"
     }
   ],
   "paths": {
