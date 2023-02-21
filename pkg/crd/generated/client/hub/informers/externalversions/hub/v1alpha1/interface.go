@@ -24,14 +24,18 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// APIs returns a APIInformer.
+	APIs() APIInformer
+	// APIGroups returns a APIGroupInformer.
+	APIGroups() APIGroupInformer
 	// AccessControlPolicies returns a AccessControlPolicyInformer.
 	AccessControlPolicies() AccessControlPolicyInformer
-	// Catalogs returns a CatalogInformer.
-	Catalogs() CatalogInformer
 	// EdgeIngresses returns a EdgeIngressInformer.
 	EdgeIngresses() EdgeIngressInformer
 	// IngressClasses returns a IngressClassInformer.
 	IngressClasses() IngressClassInformer
+	// Portals returns a PortalInformer.
+	Portals() PortalInformer
 }
 
 type version struct {
@@ -45,14 +49,19 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// APIs returns a APIInformer.
+func (v *version) APIs() APIInformer {
+	return &aPIInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// APIGroups returns a APIGroupInformer.
+func (v *version) APIGroups() APIGroupInformer {
+	return &aPIGroupInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // AccessControlPolicies returns a AccessControlPolicyInformer.
 func (v *version) AccessControlPolicies() AccessControlPolicyInformer {
 	return &accessControlPolicyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// Catalogs returns a CatalogInformer.
-func (v *version) Catalogs() CatalogInformer {
-	return &catalogInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // EdgeIngresses returns a EdgeIngressInformer.
@@ -63,4 +72,9 @@ func (v *version) EdgeIngresses() EdgeIngressInformer {
 // IngressClasses returns a IngressClassInformer.
 func (v *version) IngressClasses() IngressClassInformer {
 	return &ingressClassInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// Portals returns a PortalInformer.
+func (v *version) Portals() PortalInformer {
+	return &portalInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

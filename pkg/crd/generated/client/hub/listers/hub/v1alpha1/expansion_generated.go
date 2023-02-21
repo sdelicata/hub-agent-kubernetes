@@ -18,13 +18,21 @@ limitations under the License.
 
 package v1alpha1
 
+// APIListerExpansion allows custom methods to be added to
+// APILister.
+type APIListerExpansion interface{}
+
+// APINamespaceListerExpansion allows custom methods to be added to
+// APINamespaceLister.
+type APINamespaceListerExpansion interface{}
+
+// APIGroupListerExpansion allows custom methods to be added to
+// APIGroupLister.
+type APIGroupListerExpansion interface{}
+
 // AccessControlPolicyListerExpansion allows custom methods to be added to
 // AccessControlPolicyLister.
 type AccessControlPolicyListerExpansion interface{}
-
-// CatalogListerExpansion allows custom methods to be added to
-// CatalogLister.
-type CatalogListerExpansion interface{}
 
 // EdgeIngressListerExpansion allows custom methods to be added to
 // EdgeIngressLister.
@@ -37,3 +45,7 @@ type EdgeIngressNamespaceListerExpansion interface{}
 // IngressClassListerExpansion allows custom methods to be added to
 // IngressClassLister.
 type IngressClassListerExpansion interface{}
+
+// PortalListerExpansion allows custom methods to be added to
+// PortalLister.
+type PortalListerExpansion interface{}

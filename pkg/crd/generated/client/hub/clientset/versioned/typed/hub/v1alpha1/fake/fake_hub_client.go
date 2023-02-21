@@ -28,12 +28,16 @@ type FakeHubV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeHubV1alpha1) AccessControlPolicies() v1alpha1.AccessControlPolicyInterface {
-	return &FakeAccessControlPolicies{c}
+func (c *FakeHubV1alpha1) APIs(namespace string) v1alpha1.APIInterface {
+	return &FakeAPIs{c, namespace}
 }
 
-func (c *FakeHubV1alpha1) Catalogs() v1alpha1.CatalogInterface {
-	return &FakeCatalogs{c}
+func (c *FakeHubV1alpha1) APIGroups() v1alpha1.APIGroupInterface {
+	return &FakeAPIGroups{c}
+}
+
+func (c *FakeHubV1alpha1) AccessControlPolicies() v1alpha1.AccessControlPolicyInterface {
+	return &FakeAccessControlPolicies{c}
 }
 
 func (c *FakeHubV1alpha1) EdgeIngresses(namespace string) v1alpha1.EdgeIngressInterface {
@@ -42,6 +46,10 @@ func (c *FakeHubV1alpha1) EdgeIngresses(namespace string) v1alpha1.EdgeIngressIn
 
 func (c *FakeHubV1alpha1) IngressClasses() v1alpha1.IngressClassInterface {
 	return &FakeIngressClasses{c}
+}
+
+func (c *FakeHubV1alpha1) Portals() v1alpha1.PortalInterface {
+	return &FakePortals{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

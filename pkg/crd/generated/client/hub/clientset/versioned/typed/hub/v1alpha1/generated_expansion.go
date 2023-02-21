@@ -18,10 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
-type AccessControlPolicyExpansion interface{}
+type APIExpansion interface{}
 
-type CatalogExpansion interface{}
+type APIGroupExpansion interface{}
+
+type AccessControlPolicyExpansion interface{}
 
 type EdgeIngressExpansion interface{}
 
 type IngressClassExpansion interface{}
+
+type PortalExpansion interface{}
