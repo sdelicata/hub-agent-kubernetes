@@ -100,13 +100,13 @@ func Test_WatcherRun(t *testing.T) {
 		test := test
 
 		t.Run(test.desc, func(t *testing.T) {
-			wantPortals := loadFixtures[hubv1alpha1.Portal](t, test.wantPortals)
+			wantPortals := loadFixtures[hubv1alpha1.APIPortal](t, test.wantPortals)
 			wantIngresses := loadFixtures[netv1.Ingress](t, test.wantIngresses)
 			wantEdgeIngresses := loadFixtures[hubv1alpha1.EdgeIngress](t, test.wantEdgeIngresses)
 			wantSecrets := loadFixtures[corev1.Secret](t, test.wantSecrets)
 			wantMiddlewares := loadFixtures[traefikv1alpha1.Middleware](t, test.wantMiddlewares)
 
-			clusterPortals := loadFixtures[hubv1alpha1.Portal](t, test.clusterPortals)
+			clusterPortals := loadFixtures[hubv1alpha1.APIPortal](t, test.clusterPortals)
 			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
 			clusterSecrets := loadFixtures[corev1.Secret](t, test.clusterSecrets)
 			clusterMiddlewares := loadFixtures[traefikv1alpha1.Middleware](t, test.clusterMiddlewares)
@@ -139,7 +139,7 @@ func Test_WatcherRun(t *testing.T) {
 			kubeInformer := informers.NewSharedInformerFactory(kubeClientSet, 0)
 			hubInformer := hubinformer.NewSharedInformerFactory(hubClientSet, 0)
 
-			hubInformer.Hub().V1alpha1().Portals().Informer()
+			hubInformer.Hub().V1alpha1().APIPortals().Informer()
 			kubeInformer.Networking().V1().Ingresses().Informer()
 
 			hubInformer.Start(ctx.Done())
@@ -225,16 +225,16 @@ func assertSecretsMatches(t *testing.T, kubeClientSet *kubemock.Clientset, names
 	assert.ElementsMatch(t, want, secrets)
 }
 
-func assertPortalsMatches(t *testing.T, hubClientSet *hubkubemock.Clientset, want []hubv1alpha1.Portal) {
+func assertPortalsMatches(t *testing.T, hubClientSet *hubkubemock.Clientset, want []hubv1alpha1.APIPortal) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	portalList, err := hubClientSet.HubV1alpha1().Portals().List(ctx, metav1.ListOptions{})
+	portalList, err := hubClientSet.HubV1alpha1().APIPortals().List(ctx, metav1.ListOptions{})
 	require.NoError(t, err)
 
-	var portals []hubv1alpha1.Portal
+	var portals []hubv1alpha1.APIPortal
 	for _, portal := range portalList.Items {
 		portal.Status.SyncedAt = metav1.Time{}
 

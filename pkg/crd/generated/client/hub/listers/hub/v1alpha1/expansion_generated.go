@@ -30,6 +30,10 @@ type APINamespaceListerExpansion interface{}
 // APIGroupLister.
 type APIGroupListerExpansion interface{}
 
+// APIPortalListerExpansion allows custom methods to be added to
+// APIPortalLister.
+type APIPortalListerExpansion interface{}
+
 // AccessControlPolicyListerExpansion allows custom methods to be added to
 // AccessControlPolicyLister.
 type AccessControlPolicyListerExpansion interface{}
@@ -45,7 +49,3 @@ type EdgeIngressNamespaceListerExpansion interface{}
 // IngressClassListerExpansion allows custom methods to be added to
 // IngressClassLister.
 type IngressClassListerExpansion interface{}
-
-// PortalListerExpansion allows custom methods to be added to
-// PortalLister.
-type PortalListerExpansion interface{}

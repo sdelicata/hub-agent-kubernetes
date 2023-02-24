@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var testPortalSpec = hubv1alpha1.PortalSpec{
+var testPortalSpec = hubv1alpha1.APIPortalSpec{
 	Description:      "My awesome portal",
 	CustomDomains:    []string{"foo.example.com", "bar.example.com"},
 	APICustomDomains: []string{"api.foo.example.com", "api.bar.example.com"},
@@ -55,14 +55,14 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Create,
 			Object: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
@@ -122,7 +122,7 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		Allowed:   true,
 		PatchType: wantPatchType,
 		Patch: mustMarshal(t, []patch{
-			{Op: "replace", Path: "/status", Value: hubv1alpha1.PortalStatus{
+			{Op: "replace", Path: "/status", Value: hubv1alpha1.APIPortalStatus{
 				Version:          "version-1",
 				SyncedAt:         now,
 				URLs:             "https://foo.example.com",
@@ -147,14 +147,14 @@ func TestHandler_ServeHTTP_createOperationConflict(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Create,
 			Object: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
@@ -186,7 +186,7 @@ func TestHandler_ServeHTTP_createOperationConflict(t *testing.T) {
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
-			Message: "create portal: BOOM",
+			Message: "create APIPortal: BOOM",
 		},
 	}
 
@@ -201,30 +201,30 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		version    = "version-3"
 	)
 
-	newPortal := hubv1alpha1.Portal{
+	newPortal := hubv1alpha1.APIPortal{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Portal",
+			Kind:       "APIPortal",
 			APIVersion: "hub.traefik.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: portalName},
-		Spec: hubv1alpha1.PortalSpec{
+		Spec: hubv1alpha1.APIPortalSpec{
 			Description:      "My updated portal",
 			CustomDomains:    []string{"foo.example.com"},
 			APICustomDomains: []string{"api.foo.example.com"},
 		},
-		Status: hubv1alpha1.PortalStatus{
+		Status: hubv1alpha1.APIPortalStatus{
 			HubDomain:    "majestic-beaver-123.hub-traefik.io",
 			APIHubDomain: "brave-lion-123.hub-traefik.io",
 		},
 	}
-	oldPortal := hubv1alpha1.Portal{
+	oldPortal := hubv1alpha1.APIPortal{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Portal",
+			Kind:       "APIPortal",
 			APIVersion: "hub.traefik.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: portalName},
 		Spec:       testPortalSpec,
-		Status: hubv1alpha1.PortalStatus{
+		Status: hubv1alpha1.APIPortalStatus{
 			Version:  version,
 			SyncedAt: metav1.NewTime(now.Time.Add(-time.Hour)),
 		},
@@ -235,7 +235,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Update,
@@ -299,7 +299,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		Allowed:   true,
 		PatchType: wantPatchType,
 		Patch: mustMarshal(t, []patch{
-			{Op: "replace", Path: "/status", Value: hubv1alpha1.PortalStatus{
+			{Op: "replace", Path: "/status", Value: hubv1alpha1.APIPortalStatus{
 				Version:          "version-4",
 				SyncedAt:         now,
 				HubDomain:        "majestic-beaver-123.hub-traefik.io",
@@ -328,31 +328,31 @@ func TestHandler_ServeHTTP_updateOperationConflict(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Update,
 			Object: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
-					Spec: hubv1alpha1.PortalSpec{
+					Spec: hubv1alpha1.APIPortalSpec{
 						CustomDomains: []string{"foo.example.com"},
 					},
 				}),
 			},
 			OldObject: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
 					Spec:       testPortalSpec,
-					Status: hubv1alpha1.PortalStatus{
+					Status: hubv1alpha1.APIPortalStatus{
 						Version:  version,
 						SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
 					},
@@ -384,7 +384,7 @@ func TestHandler_ServeHTTP_updateOperationConflict(t *testing.T) {
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
-			Message: "update portal: BOOM",
+			Message: "update APIPortal: BOOM",
 		},
 	}
 
@@ -403,19 +403,19 @@ func TestHandler_ServeHTTP_deleteOperation(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Delete,
 			OldObject: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
 					Spec:       testPortalSpec,
-					Status: hubv1alpha1.PortalStatus{
+					Status: hubv1alpha1.APIPortalStatus{
 						Version:  version,
 						SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
 					},
@@ -461,19 +461,19 @@ func TestHandler_ServeHTTP_deleteOperationConflict(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      portalName,
 			Operation: admv1.Delete,
 			OldObject: runtime.RawExtension{
-				Raw: mustMarshal(t, hubv1alpha1.Portal{
+				Raw: mustMarshal(t, hubv1alpha1.APIPortal{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       "Portal",
+						Kind:       "APIPortal",
 						APIVersion: "hub.traefik.io/v1alpha1",
 					},
 					ObjectMeta: metav1.ObjectMeta{Name: portalName},
 					Spec:       testPortalSpec,
-					Status: hubv1alpha1.PortalStatus{
+					Status: hubv1alpha1.APIPortalStatus{
 						Version:  version,
 						SyncedAt: metav1.NewTime(time.Now().Add(-time.Hour)),
 					},
@@ -504,7 +504,7 @@ func TestHandler_ServeHTTP_deleteOperationConflict(t *testing.T) {
 		Allowed: false,
 		Result: &metav1.Status{
 			Status:  "Failure",
-			Message: "delete portal: BOOM",
+			Message: "delete APIPortal: BOOM",
 		},
 	}
 
@@ -561,7 +561,7 @@ func TestHandler_ServeHTTP_unsupportedOperation(t *testing.T) {
 			Kind: metav1.GroupVersionKind{
 				Group:   "hub.traefik.io",
 				Version: "v1alpha1",
-				Kind:    "Portal",
+				Kind:    "APIPortal",
 			},
 			Name:      "whoami",
 			Namespace: "default",

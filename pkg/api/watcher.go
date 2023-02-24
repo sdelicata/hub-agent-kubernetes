@@ -124,7 +124,7 @@ func (w *Watcher) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("Stopping Portal watcher")
+			log.Info().Msg("Stopping APIPortal watcher")
 			return
 
 		case <-t.C:
@@ -169,7 +169,7 @@ func (w *Watcher) syncCertificates(ctx context.Context) error {
 	w.wildCardCert = wildcardCert
 	w.wildCardCertMu.Unlock()
 
-	clusterPortals, err := w.hubInformer.Hub().V1alpha1().Portals().Lister().List(labels.Everything())
+	clusterPortals, err := w.hubInformer.Hub().V1alpha1().APIPortals().Lister().List(labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (w *Watcher) syncCertificates(ctx context.Context) error {
 	return nil
 }
 
-func (w *Watcher) setupCertificates(ctx context.Context, portal *hubv1alpha1.Portal) error {
+func (w *Watcher) setupCertificates(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
 	apisNamespaces := make(map[string]struct{})
 	// TODO: fill apisNamespaces from portal APIs
 
@@ -214,7 +214,7 @@ func (w *Watcher) setupCertificates(ctx context.Context, portal *hubv1alpha1.Por
 	return nil
 }
 
-func (w *Watcher) upsertSecret(ctx context.Context, cert edgeingress.Certificate, name, namespace string, p *hubv1alpha1.Portal) error {
+func (w *Watcher) upsertSecret(ctx context.Context, cert edgeingress.Certificate, name, namespace string, p *hubv1alpha1.APIPortal) error {
 	secret, err := w.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil && !kerror.IsNotFound(err) {
 		return fmt.Errorf("get secret: %w", err)
@@ -242,7 +242,7 @@ func (w *Watcher) upsertSecret(ctx context.Context, cert edgeingress.Certificate
 		if p != nil {
 			secret.OwnerReferences = []metav1.OwnerReference{{
 				APIVersion: "hub.traefik.io/v1alpha1",
-				Kind:       "Portal",
+				Kind:       "APIPortal",
 				Name:       p.Name,
 				UID:        p.UID,
 			}}
@@ -265,7 +265,7 @@ func (w *Watcher) upsertSecret(ctx context.Context, cert edgeingress.Certificate
 	if p != nil {
 		newOwners = appendOwnerReference(secret.OwnerReferences, metav1.OwnerReference{
 			APIVersion: "hub.traefik.io/v1alpha1",
-			Kind:       "Portal",
+			Kind:       "APIPortal",
 			Name:       p.Name,
 			UID:        p.UID,
 		})
@@ -306,17 +306,17 @@ func appendOwnerReference(references []metav1.OwnerReference, ref metav1.OwnerRe
 func (w *Watcher) syncPortals(ctx context.Context) {
 	platformPortals, err := w.platform.GetPortals(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("Unable to fetch portals")
+		log.Error().Err(err).Msg("Unable to fetch APIPortals")
 		return
 	}
 
-	clusterPortals, err := w.hubInformer.Hub().V1alpha1().Portals().Lister().List(labels.Everything())
+	clusterPortals, err := w.hubInformer.Hub().V1alpha1().APIPortals().Lister().List(labels.Everything())
 	if err != nil {
-		log.Error().Err(err).Msg("Unable to obtain portals")
+		log.Error().Err(err).Msg("Unable to obtain APIPortals")
 		return
 	}
 
-	portalsByName := map[string]*hubv1alpha1.Portal{}
+	portalsByName := map[string]*hubv1alpha1.APIPortal{}
 	for _, portal := range clusterPortals {
 		portalsByName[portal.Name] = portal
 	}
@@ -333,7 +333,7 @@ func (w *Watcher) syncPortals(ctx context.Context) {
 			if err = w.createPortal(ctx, &platformPortal); err != nil {
 				log.Error().Err(err).
 					Str("name", platformPortal.Name).
-					Msg("Unable to create portal")
+					Msg("Unable to create APIPortal")
 			}
 			continue
 		}
@@ -341,7 +341,7 @@ func (w *Watcher) syncPortals(ctx context.Context) {
 		if err = w.updatePortal(ctx, clusterPortal, &platformPortal); err != nil {
 			log.Error().Err(err).
 				Str("name", platformPortal.Name).
-				Msg("Unable to update portal")
+				Msg("Unable to update APIPortal")
 		}
 	}
 
@@ -351,67 +351,67 @@ func (w *Watcher) syncPortals(ctx context.Context) {
 func (w *Watcher) createPortal(ctx context.Context, portal *Portal) error {
 	obj, err := portal.Resource()
 	if err != nil {
-		return fmt.Errorf("build portal resource: %w", err)
+		return fmt.Errorf("build APIPortal resource: %w", err)
 	}
 
-	obj, err = w.hubClientSet.HubV1alpha1().Portals().Create(ctx, obj, metav1.CreateOptions{})
+	obj, err = w.hubClientSet.HubV1alpha1().APIPortals().Create(ctx, obj, metav1.CreateOptions{})
 	if err != nil {
-		return fmt.Errorf("creating portal: %w", err)
+		return fmt.Errorf("creating APIPortal: %w", err)
 	}
 
 	log.Debug().
 		Str("name", obj.Name).
-		Msg("Portal created")
+		Msg("APIPortal created")
 
 	return w.syncChildResources(ctx, obj)
 }
 
-func (w *Watcher) updatePortal(ctx context.Context, oldPortal *hubv1alpha1.Portal, newPortal *Portal) error {
+func (w *Watcher) updatePortal(ctx context.Context, oldPortal *hubv1alpha1.APIPortal, newPortal *Portal) error {
 	obj, err := newPortal.Resource()
 	if err != nil {
-		return fmt.Errorf("build portal resource: %w", err)
+		return fmt.Errorf("build APIPortal resource: %w", err)
 	}
 
 	obj.ObjectMeta = oldPortal.ObjectMeta
 
 	if obj.Status.Version != oldPortal.Status.Version {
-		obj, err = w.hubClientSet.HubV1alpha1().Portals().Update(ctx, obj, metav1.UpdateOptions{})
+		obj, err = w.hubClientSet.HubV1alpha1().APIPortals().Update(ctx, obj, metav1.UpdateOptions{})
 		if err != nil {
-			return fmt.Errorf("updating portal: %w", err)
+			return fmt.Errorf("updating APIPortal: %w", err)
 		}
 
 		log.Debug().
 			Str("name", obj.Name).
-			Msg("Portal updated")
+			Msg("APIPortal updated")
 	}
 
 	return w.syncChildResources(ctx, obj)
 }
 
-func (w *Watcher) cleanPortals(ctx context.Context, portals map[string]*hubv1alpha1.Portal) {
+func (w *Watcher) cleanPortals(ctx context.Context, portals map[string]*hubv1alpha1.APIPortal) {
 	for _, portal := range portals {
-		// Foreground propagation allow us to delete all resources owned by the Portal.
+		// Foreground propagation allow us to delete all resources owned by the APIPortal.
 		policy := metav1.DeletePropagationForeground
 
 		opts := metav1.DeleteOptions{
 			PropagationPolicy: &policy,
 		}
-		err := w.hubClientSet.HubV1alpha1().Portals().Delete(ctx, portal.Name, opts)
+		err := w.hubClientSet.HubV1alpha1().APIPortals().Delete(ctx, portal.Name, opts)
 		if err != nil {
-			log.Error().Err(err).Msg("Unable to delete portal")
+			log.Error().Err(err).Msg("Unable to delete APIPortal")
 
 			continue
 		}
 
 		log.Debug().
 			Str("name", portal.Name).
-			Msg("Portal deleted")
+			Msg("APIPortal deleted")
 	}
 }
 
-func (w *Watcher) syncChildResources(ctx context.Context, portal *hubv1alpha1.Portal) error {
+func (w *Watcher) syncChildResources(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
 	if err := w.setupCertificates(ctx, portal); err != nil {
-		return fmt.Errorf("unable to setup portal certificates: %w", err)
+		return fmt.Errorf("unable to setup APIPortal certificates: %w", err)
 	}
 
 	if err := w.cleanupIngresses(ctx, portal); err != nil {
@@ -429,10 +429,10 @@ func (w *Watcher) syncChildResources(ctx context.Context, portal *hubv1alpha1.Po
 	return nil
 }
 
-func (w *Watcher) upsertPortalEdgeIngress(ctx context.Context, portal *hubv1alpha1.Portal) error {
+func (w *Watcher) upsertPortalEdgeIngress(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
 	ingName, err := getEdgeIngressPortalName(portal.Name)
 	if err != nil {
-		return fmt.Errorf("get edgeIngress name: %w", err)
+		return fmt.Errorf("get edge ingress name: %w", err)
 	}
 
 	clusterIng, err := w.hubClientSet.HubV1alpha1().EdgeIngresses(w.config.AgentNamespace).Get(ctx, ingName, metav1.GetOptions{})
@@ -476,19 +476,19 @@ func (w *Watcher) upsertPortalEdgeIngress(ctx context.Context, portal *hubv1alph
 		}
 	}
 
-	// Set the Portal HubDomain with the domain obtained from the EdgeIngress.
+	// Set the APIPortal HubDomain with the domain obtained from the EdgeIngress.
 	patch := []byte(fmt.Sprintf(`[
 		{ "op": "replace", "path": "/status/hubDomain", "value": %q }
 	]`, clusterIng.Status.Domain))
 
-	if _, err = w.hubClientSet.HubV1alpha1().Portals().Patch(ctx, portal.Name, ktypes.JSONPatchType, patch, metav1.PatchOptions{}); err != nil {
-		return fmt.Errorf("patch portal: %w", err)
+	if _, err = w.hubClientSet.HubV1alpha1().APIPortals().Patch(ctx, portal.Name, ktypes.JSONPatchType, patch, metav1.PatchOptions{}); err != nil {
+		return fmt.Errorf("patch APIPortal: %w", err)
 	}
 
 	return nil
 }
 
-func (w *Watcher) upsertIngresses(ctx context.Context, portal *hubv1alpha1.Portal) error {
+func (w *Watcher) upsertIngresses(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
 	apisByNamespace := make(map[string][]hubv1alpha1.API)
 	// TODO: fill apisByNamespace from portal APIs
 
@@ -522,7 +522,7 @@ func (w *Watcher) upsertIngresses(ctx context.Context, portal *hubv1alpha1.Porta
 	return nil
 }
 
-func (w *Watcher) setupStripPrefixMiddleware(ctx context.Context, portal *hubv1alpha1.Portal, apis []hubv1alpha1.API, namespace string) (string, error) {
+func (w *Watcher) setupStripPrefixMiddleware(ctx context.Context, portal *hubv1alpha1.APIPortal, apis []hubv1alpha1.API, namespace string) (string, error) {
 	name, err := getStripPrefixMiddlewareName(portal.Name)
 	if err != nil {
 		return "", fmt.Errorf("get stripPrefix middleware name: %w", err)
@@ -601,8 +601,8 @@ func (w *Watcher) upsertIngress(ctx context.Context, ingress *netv1.Ingress) err
 	return nil
 }
 
-// cleanupIngresses deletes the ingresses from namespaces that are no longer referenced in the portal.
-func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Portal) error {
+// cleanupIngresses deletes the ingresses from namespaces that are no longer referenced in the APIPortal.
+func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.APIPortal) error {
 	managedByHub, err := labels.NewRequirement("app.kubernetes.io/managed-by", selection.Equals, []string{"traefik-hub"})
 	if err != nil {
 		return fmt.Errorf("create managed by hub requirement: %w", err)
@@ -639,10 +639,10 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Port
 				log.Ctx(ctx).
 					Error().
 					Err(err).
-					Str("portal", portal.Name).
+					Str("api_portal", portal.Name).
 					Str("secret_name", ingress.Spec.TLS[0].SecretName).
 					Str("secret_namespace", ingress.Namespace).
-					Msg("Unable to clean Portal's child Secret")
+					Msg("Unable to clean APIPortal's child Secret")
 			}
 
 			middlewareName, err := getStripPrefixMiddlewareName(portal.Name)
@@ -650,9 +650,9 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Port
 				log.Ctx(ctx).
 					Error().
 					Err(err).
-					Str("portal", portal.Name).
+					Str("api_portal", portal.Name).
 					Str("middleware_namespace", ingress.Namespace).
-					Msg("Unable to get Portal's child Middleware name")
+					Msg("Unable to get APIPortal's child Middleware name")
 
 				continue
 			}
@@ -665,10 +665,10 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Port
 				log.Ctx(ctx).
 					Error().
 					Err(err).
-					Str("portal", portal.Name).
+					Str("api_portal", portal.Name).
 					Str("middleware_name", middlewareName).
 					Str("middleware_namespace", ingress.Namespace).
-					Msg("Unable to clean Portal's child Middleware")
+					Msg("Unable to clean APIPortal's child Middleware")
 
 				continue
 			}
@@ -681,10 +681,10 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Port
 				log.Ctx(ctx).
 					Error().
 					Err(err).
-					Str("portal", portal.Name).
+					Str("api_portal", portal.Name).
 					Str("ingress_name", ingress.Name).
 					Str("ingress_namespace", ingress.Namespace).
-					Msg("Unable to clean Portal's child Ingress")
+					Msg("Unable to clean APIPortal's child Ingress")
 
 				continue
 			}
@@ -694,7 +694,7 @@ func (w *Watcher) cleanupIngresses(ctx context.Context, portal *hubv1alpha1.Port
 	return nil
 }
 
-func (w *Watcher) buildHubDomainIngress(namespace string, portal *hubv1alpha1.Portal, apis []hubv1alpha1.API, traefikMiddlewareName string) (*netv1.Ingress, error) {
+func (w *Watcher) buildHubDomainIngress(namespace string, portal *hubv1alpha1.APIPortal, apis []hubv1alpha1.API, traefikMiddlewareName string) (*netv1.Ingress, error) {
 	name, err := getHubDomainIngressName(portal.Name)
 	if err != nil {
 		return nil, fmt.Errorf("get hub domain ingress name: %w", err)
@@ -710,7 +710,7 @@ func (w *Watcher) buildHubDomainIngress(namespace string, portal *hubv1alpha1.Po
 	}, nil
 }
 
-func (w *Watcher) buildCustomDomainsIngress(namespace string, portal *hubv1alpha1.Portal, apis []hubv1alpha1.API, traefikMiddlewareName string) (*netv1.Ingress, error) {
+func (w *Watcher) buildCustomDomainsIngress(namespace string, portal *hubv1alpha1.APIPortal, apis []hubv1alpha1.API, traefikMiddlewareName string) (*netv1.Ingress, error) {
 	ingressName, err := getCustomDomainsIngressName(portal.Name)
 	if err != nil {
 		return nil, fmt.Errorf("get custom domains ingress name: %w", err)
@@ -731,7 +731,7 @@ func (w *Watcher) buildCustomDomainsIngress(namespace string, portal *hubv1alpha
 	}, nil
 }
 
-func (w *Watcher) buildIngressObjectMeta(namespace, name string, portal *hubv1alpha1.Portal, entrypoint, traefikMiddlewareName string) metav1.ObjectMeta {
+func (w *Watcher) buildIngressObjectMeta(namespace, name string, portal *hubv1alpha1.APIPortal, entrypoint, traefikMiddlewareName string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
@@ -743,7 +743,7 @@ func (w *Watcher) buildIngressObjectMeta(namespace, name string, portal *hubv1al
 		Labels: map[string]string{
 			"app.kubernetes.io/managed-by": "traefik-hub",
 		},
-		// Set OwnerReference allow us to delete ingresses owned by a portal.
+		// Set OwnerReference allow us to delete ingresses owned by an APIPortal.
 		OwnerReferences: []metav1.OwnerReference{
 			{
 				APIVersion: portal.APIVersion,
@@ -887,7 +887,7 @@ func getStripPrefixMiddlewareName(portalName string) (string, error) {
 	return fmt.Sprintf("%s-%d-stripprefix", portalName, h), nil
 }
 
-func getTraefikStripPrefixMiddlewareName(namespace string, portal *hubv1alpha1.Portal) (string, error) {
+func getTraefikStripPrefixMiddlewareName(namespace string, portal *hubv1alpha1.APIPortal) (string, error) {
 	middlewareName, err := getStripPrefixMiddlewareName(portal.Name)
 	if err != nil {
 		return "", fmt.Errorf("get stripPrefix middleware name: %w", err)

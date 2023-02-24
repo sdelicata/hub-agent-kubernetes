@@ -22,10 +22,10 @@ type APIExpansion interface{}
 
 type APIGroupExpansion interface{}
 
+type APIPortalExpansion interface{}
+
 type AccessControlPolicyExpansion interface{}
 
 type EdgeIngressExpansion interface{}
 
 type IngressClassExpansion interface{}
-
-type PortalExpansion interface{}

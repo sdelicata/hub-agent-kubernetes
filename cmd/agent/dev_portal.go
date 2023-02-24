@@ -88,7 +88,7 @@ func (c devPortalCmd) run(cliCtx *cli.Context) error {
 	}
 
 	hubInformer := hubinformer.NewSharedInformerFactory(hubClientSet, 5*time.Minute)
-	if _, errInformer := hubInformer.Hub().V1alpha1().Portals().Informer().AddEventHandler(portalWatcher); errInformer != nil {
+	if _, errInformer := hubInformer.Hub().V1alpha1().APIPortals().Informer().AddEventHandler(portalWatcher); errInformer != nil {
 		return fmt.Errorf("add portal watcher: %w", errInformer)
 	}
 

@@ -25,25 +25,25 @@ import (
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Portal defines a portal.
+// APIPortal defines a portal that expose APIs.
 // +kubebuilder:printcolumn:name="URLs",type=string,JSONPath=`.status.urls`
 // +kubebuilder:printcolumn:name="APIURLs",type=string,JSONPath=`.status.apiUrls`
 // +kubebuilder:resource:scope=Cluster
-type Portal struct {
+type APIPortal struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// The desired behavior of this portal.
-	Spec PortalSpec `json:"spec,omitempty"`
+	// The desired behavior of this APIPortal.
+	Spec APIPortalSpec `json:"spec,omitempty"`
 
-	// The current status of this portal.
+	// The current status of this APIPortal.
 	// +optional
-	Status PortalStatus `json:"status,omitempty"`
+	Status APIPortalStatus `json:"status,omitempty"`
 }
 
-// PortalSpec configures a Portal.
-type PortalSpec struct {
+// APIPortalSpec configures an APIPortal.
+type APIPortalSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
 	// CustomDomains are the custom domains under which the portal will be exposed.
@@ -54,26 +54,26 @@ type PortalSpec struct {
 	APICustomDomains []string `json:"apiCustomDomains,omitempty"`
 }
 
-// PortalStatus is the status of a Portal.
-type PortalStatus struct {
+// APIPortalStatus is the status of an APIPortal.
+type APIPortalStatus struct {
 	Version  string      `json:"version,omitempty"`
 	SyncedAt metav1.Time `json:"syncedAt,omitempty"`
 
-	// URLs are the URLs for accessing the portal WebUI.
+	// URLs are the URLs for accessing the APIPortal WebUI.
 	URLs string `json:"urls"`
 
-	// APIURLs are the URLs for accessing the portal API.
+	// APIURLs are the URLs for accessing the APIPortal API.
 	APIURLs string `json:"apiUrls"`
 
-	// HubDomain is the hub generated domain of the portal WebUI.
+	// HubDomain is the hub generated domain of the APIPortal WebUI.
 	// +optional
 	HubDomain string `json:"hubDomain"`
 
-	// APIHubDomain is the hub generated domain of the portal API.
+	// APIHubDomain is the hub generated domain of the APIPortal API.
 	// +optional
 	APIHubDomain string `json:"apiHubDomain"`
 
-	// CustomDomains are the custom domains for accessing the exposed portal WebUI.
+	// CustomDomains are the custom domains for accessing the exposed APIPortal WebUI.
 	// +optional
 	CustomDomains []string `json:"customDomains,omitempty"`
 
@@ -81,17 +81,17 @@ type PortalStatus struct {
 	// +optional
 	APICustomDomains []string `json:"apiCustomDomains,omitempty"`
 
-	// Hash is a hash representing the Portal.
+	// Hash is a hash representing the APIPortal.
 	Hash string `json:"hash,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PortalList defines a list of portals.
-type PortalList struct {
+// APIPortalList defines a list of APIPortals.
+type APIPortalList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []Portal `json:"items"`
+	Items []APIPortal `json:"items"`
 }

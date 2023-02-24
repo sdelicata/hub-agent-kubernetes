@@ -54,7 +54,7 @@ type CustomDomain struct {
 }
 
 // Resource builds the v1alpha1 Portal resource.
-func (p *Portal) Resource() (*hubv1alpha1.Portal, error) {
+func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 	var customDomains []string
 	for _, domain := range p.CustomDomains {
 		customDomains = append(customDomains, domain.Name)
@@ -65,7 +65,7 @@ func (p *Portal) Resource() (*hubv1alpha1.Portal, error) {
 		apiCustomDomains = append(apiCustomDomains, domain.Name)
 	}
 
-	spec := hubv1alpha1.PortalSpec{
+	spec := hubv1alpha1.APIPortalSpec{
 		Description:      p.Description,
 		CustomDomains:    customDomains,
 		APICustomDomains: apiCustomDomains,
@@ -97,14 +97,14 @@ func (p *Portal) Resource() (*hubv1alpha1.Portal, error) {
 	}
 	apiUrls = append(apiUrls, "https://"+p.APIHubDomain)
 
-	portal := &hubv1alpha1.Portal{
+	portal := &hubv1alpha1.APIPortal{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "hub.traefik.io/v1alpha1",
-			Kind:       "Portal",
+			Kind:       "APIPortal",
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: p.Name},
 		Spec:       spec,
-		Status: hubv1alpha1.PortalStatus{
+		Status: hubv1alpha1.APIPortalStatus{
 			Version:          p.Version,
 			SyncedAt:         metav1.Now(),
 			HubDomain:        p.HubDomain,
@@ -118,7 +118,7 @@ func (p *Portal) Resource() (*hubv1alpha1.Portal, error) {
 
 	portalHash, err := HashPortal(portal)
 	if err != nil {
-		return nil, fmt.Errorf("compute portal hash: %w", err)
+		return nil, fmt.Errorf("compute APIPortal hash: %w", err)
 	}
 
 	portal.Status.Hash = portalHash
@@ -135,7 +135,7 @@ type portalHash struct {
 }
 
 // HashPortal generates the hash of the portal.
-func HashPortal(p *hubv1alpha1.Portal) (string, error) {
+func HashPortal(p *hubv1alpha1.APIPortal) (string, error) {
 	ph := portalHash{
 		Description:      p.Spec.Description,
 		CustomDomains:    p.Spec.CustomDomains,
@@ -146,7 +146,7 @@ func HashPortal(p *hubv1alpha1.Portal) (string, error) {
 
 	b, err := json.Marshal(ph)
 	if err != nil {
-		return "", fmt.Errorf("encode portal: %w", err)
+		return "", fmt.Errorf("encode APIPortal: %w", err)
 	}
 
 	hash := sha1.New() //nolint:gosec // Used for content diffing, no impact on security

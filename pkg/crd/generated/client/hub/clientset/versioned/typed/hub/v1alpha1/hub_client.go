@@ -28,10 +28,10 @@ type HubV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	APIsGetter
 	APIGroupsGetter
+	APIPortalsGetter
 	AccessControlPoliciesGetter
 	EdgeIngressesGetter
 	IngressClassesGetter
-	PortalsGetter
 }
 
 // HubV1alpha1Client is used to interact with features provided by the hub.traefik.io group.
@@ -47,6 +47,10 @@ func (c *HubV1alpha1Client) APIGroups() APIGroupInterface {
 	return newAPIGroups(c)
 }
 
+func (c *HubV1alpha1Client) APIPortals() APIPortalInterface {
+	return newAPIPortals(c)
+}
+
 func (c *HubV1alpha1Client) AccessControlPolicies() AccessControlPolicyInterface {
 	return newAccessControlPolicies(c)
 }
@@ -57,10 +61,6 @@ func (c *HubV1alpha1Client) EdgeIngresses(namespace string) EdgeIngressInterface
 
 func (c *HubV1alpha1Client) IngressClasses() IngressClassInterface {
 	return newIngressClasses(c)
-}
-
-func (c *HubV1alpha1Client) Portals() PortalInterface {
-	return newPortals(c)
 }
 
 // NewForConfig creates a new HubV1alpha1Client for the given config.

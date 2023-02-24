@@ -32,58 +32,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// PortalInformer provides access to a shared informer and lister for
-// Portals.
-type PortalInformer interface {
+// APIPortalInformer provides access to a shared informer and lister for
+// APIPortals.
+type APIPortalInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.PortalLister
+	Lister() v1alpha1.APIPortalLister
 }
 
-type portalInformer struct {
+type aPIPortalInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewPortalInformer constructs a new informer for Portal type.
+// NewAPIPortalInformer constructs a new informer for APIPortal type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewPortalInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredPortalInformer(client, resyncPeriod, indexers, nil)
+func NewAPIPortalInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredAPIPortalInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredPortalInformer constructs a new informer for Portal type.
+// NewFilteredAPIPortalInformer constructs a new informer for APIPortal type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredPortalInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredAPIPortalInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.HubV1alpha1().Portals().List(context.TODO(), options)
+				return client.HubV1alpha1().APIPortals().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.HubV1alpha1().Portals().Watch(context.TODO(), options)
+				return client.HubV1alpha1().APIPortals().Watch(context.TODO(), options)
 			},
 		},
-		&hubv1alpha1.Portal{},
+		&hubv1alpha1.APIPortal{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *portalInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredPortalInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *aPIPortalInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredAPIPortalInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *portalInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&hubv1alpha1.Portal{}, f.defaultInformer)
+func (f *aPIPortalInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&hubv1alpha1.APIPortal{}, f.defaultInformer)
 }
 
-func (f *portalInformer) Lister() v1alpha1.PortalLister {
-	return v1alpha1.NewPortalLister(f.Informer().GetIndexer())
+func (f *aPIPortalInformer) Lister() v1alpha1.APIPortalLister {
+	return v1alpha1.NewAPIPortalLister(f.Informer().GetIndexer())
 }

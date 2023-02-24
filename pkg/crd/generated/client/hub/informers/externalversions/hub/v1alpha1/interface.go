@@ -28,14 +28,14 @@ type Interface interface {
 	APIs() APIInformer
 	// APIGroups returns a APIGroupInformer.
 	APIGroups() APIGroupInformer
+	// APIPortals returns a APIPortalInformer.
+	APIPortals() APIPortalInformer
 	// AccessControlPolicies returns a AccessControlPolicyInformer.
 	AccessControlPolicies() AccessControlPolicyInformer
 	// EdgeIngresses returns a EdgeIngressInformer.
 	EdgeIngresses() EdgeIngressInformer
 	// IngressClasses returns a IngressClassInformer.
 	IngressClasses() IngressClassInformer
-	// Portals returns a PortalInformer.
-	Portals() PortalInformer
 }
 
 type version struct {
@@ -59,6 +59,11 @@ func (v *version) APIGroups() APIGroupInformer {
 	return &aPIGroupInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
+// APIPortals returns a APIPortalInformer.
+func (v *version) APIPortals() APIPortalInformer {
+	return &aPIPortalInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // AccessControlPolicies returns a AccessControlPolicyInformer.
 func (v *version) AccessControlPolicies() AccessControlPolicyInformer {
 	return &accessControlPolicyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -72,9 +77,4 @@ func (v *version) EdgeIngresses() EdgeIngressInformer {
 // IngressClasses returns a IngressClassInformer.
 func (v *version) IngressClasses() IngressClassInformer {
 	return &ingressClassInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// Portals returns a PortalInformer.
-func (v *version) Portals() PortalInformer {
-	return &portalInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

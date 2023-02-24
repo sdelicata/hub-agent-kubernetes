@@ -348,7 +348,7 @@ func startHubInformer(ctx context.Context, hubInformer hubinformer.SharedInforme
 	hubInformer.Hub().V1alpha1().EdgeIngresses().Informer()
 
 	if apiAvailable {
-		hubInformer.Hub().V1alpha1().Portals().Informer()
+		hubInformer.Hub().V1alpha1().APIPortals().Informer()
 	}
 
 	hubInformer.Start(ctx.Done())
@@ -456,7 +456,7 @@ func isAPIAvailable(clientSet discovery.DiscoveryInterface) (bool, error) {
 	log.Info().Interface("crds", crdList.APIResources).Msg("crds list")
 
 	for _, resource := range crdList.APIResources {
-		if resource.Kind == "Portal" {
+		if resource.Kind == "APIPortal" {
 			return true, nil
 		}
 	}

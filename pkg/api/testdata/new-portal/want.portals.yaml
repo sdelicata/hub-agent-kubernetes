@@ -1,5 +1,5 @@
 apiVersion: hub.traefik.io/v1alpha1
-kind: Portal
+kind: APIPortal
 metadata:
   name: new-portal
 spec:

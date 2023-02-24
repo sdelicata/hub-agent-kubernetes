@@ -25,44 +25,44 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// PortalLister helps list Portals.
+// APIPortalLister helps list APIPortals.
 // All objects returned here must be treated as read-only.
-type PortalLister interface {
-	// List lists all Portals in the indexer.
+type APIPortalLister interface {
+	// List lists all APIPortals in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Portal, err error)
-	// Get retrieves the Portal from the index for a given name.
+	List(selector labels.Selector) (ret []*v1alpha1.APIPortal, err error)
+	// Get retrieves the APIPortal from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Portal, error)
-	PortalListerExpansion
+	Get(name string) (*v1alpha1.APIPortal, error)
+	APIPortalListerExpansion
 }
 
-// portalLister implements the PortalLister interface.
-type portalLister struct {
+// aPIPortalLister implements the APIPortalLister interface.
+type aPIPortalLister struct {
 	indexer cache.Indexer
 }
 
-// NewPortalLister returns a new PortalLister.
-func NewPortalLister(indexer cache.Indexer) PortalLister {
-	return &portalLister{indexer: indexer}
+// NewAPIPortalLister returns a new APIPortalLister.
+func NewAPIPortalLister(indexer cache.Indexer) APIPortalLister {
+	return &aPIPortalLister{indexer: indexer}
 }
 
-// List lists all Portals in the indexer.
-func (s *portalLister) List(selector labels.Selector) (ret []*v1alpha1.Portal, err error) {
+// List lists all APIPortals in the indexer.
+func (s *aPIPortalLister) List(selector labels.Selector) (ret []*v1alpha1.APIPortal, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Portal))
+		ret = append(ret, m.(*v1alpha1.APIPortal))
 	})
 	return ret, err
 }
 
-// Get retrieves the Portal from the index for a given name.
-func (s *portalLister) Get(name string) (*v1alpha1.Portal, error) {
+// Get retrieves the APIPortal from the index for a given name.
+func (s *aPIPortalLister) Get(name string) (*v1alpha1.APIPortal, error) {
 	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("portal"), name)
+		return nil, errors.NewNotFound(v1alpha1.Resource("apiportal"), name)
 	}
-	return obj.(*v1alpha1.Portal), nil
+	return obj.(*v1alpha1.APIPortal), nil
 }

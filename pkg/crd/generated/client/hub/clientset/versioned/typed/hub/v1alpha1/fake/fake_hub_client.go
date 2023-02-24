@@ -36,6 +36,10 @@ func (c *FakeHubV1alpha1) APIGroups() v1alpha1.APIGroupInterface {
 	return &FakeAPIGroups{c}
 }
 
+func (c *FakeHubV1alpha1) APIPortals() v1alpha1.APIPortalInterface {
+	return &FakeAPIPortals{c}
+}
+
 func (c *FakeHubV1alpha1) AccessControlPolicies() v1alpha1.AccessControlPolicyInterface {
 	return &FakeAccessControlPolicies{c}
 }
@@ -46,10 +50,6 @@ func (c *FakeHubV1alpha1) EdgeIngresses(namespace string) v1alpha1.EdgeIngressIn
 
 func (c *FakeHubV1alpha1) IngressClasses() v1alpha1.IngressClassInterface {
 	return &FakeIngressClasses{c}
-}
-
-func (c *FakeHubV1alpha1) Portals() v1alpha1.PortalInterface {
-	return &FakePortals{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

@@ -59,7 +59,7 @@ type Watcher struct {
 	indexTemplate *template.Template
 }
 
-// NewWatcher returns a new watcher to track Portal resources. It calls the given Updater when a Portal is modified at most
+// NewWatcher returns a new watcher to track APIPortal resources. It calls the given Updater when an APIPortal is modified at most
 // once every throttle.
 func NewWatcher(switcher *HTTPHandlerSwitcher) (*Watcher, error) {
 	client := retryablehttp.NewClient()
@@ -101,7 +101,7 @@ func (w *Watcher) Run(ctx context.Context) {
 
 			w.previous = hash
 
-			log.Debug().Msg("Refreshing Portal handlers")
+			log.Debug().Msg("Refreshing APIPortal handlers")
 
 			w.switcher.UpdateHandler(w.buildRoutes())
 
@@ -114,12 +114,12 @@ func (w *Watcher) Run(ctx context.Context) {
 // OnAdd implements Kubernetes cache.ResourceEventHandler so it can be used as an informer event handler.
 func (w *Watcher) OnAdd(obj interface{}) {
 	switch v := obj.(type) {
-	case *hubv1alpha1.Portal:
+	case *hubv1alpha1.APIPortal:
 		w.updatePortalsFromCRD(v)
 
 	default:
 		log.Error().
-			Str("component", "portal_watcher").
+			Str("component", "api_portal_watcher").
 			Str("type", fmt.Sprintf("%T", obj)).
 			Msg("Received add event of unknown type")
 		return
@@ -134,12 +134,12 @@ func (w *Watcher) OnAdd(obj interface{}) {
 // OnUpdate implements Kubernetes cache.ResourceEventHandler so it can be used as an informer event handler.
 func (w *Watcher) OnUpdate(_, newObj interface{}) {
 	switch v := newObj.(type) {
-	case *hubv1alpha1.Portal:
+	case *hubv1alpha1.APIPortal:
 		w.updatePortalsFromCRD(v)
 
 	default:
 		log.Error().
-			Str("component", "portal_watcher").
+			Str("component", "api_portal_watcher").
 			Str("type", fmt.Sprintf("%T", newObj)).
 			Msg("Received update event of unknown type")
 		return
@@ -154,12 +154,12 @@ func (w *Watcher) OnUpdate(_, newObj interface{}) {
 // OnDelete implements Kubernetes cache.ResourceEventHandler so it can be used as an informer event handler.
 func (w *Watcher) OnDelete(obj interface{}) {
 	switch v := obj.(type) {
-	case *hubv1alpha1.Portal:
+	case *hubv1alpha1.APIPortal:
 		w.deletePortal(v.Name)
 
 	default:
 		log.Error().
-			Str("component", "portal_watcher").
+			Str("component", "api_portal_watcher").
 			Str("type", fmt.Sprintf("%T", obj)).
 			Msg("Received delete event of unknown type")
 		return
@@ -171,7 +171,7 @@ func (w *Watcher) OnDelete(obj interface{}) {
 	}
 }
 
-func (w *Watcher) updatePortalsFromCRD(p *hubv1alpha1.Portal) {
+func (w *Watcher) updatePortalsFromCRD(p *hubv1alpha1.APIPortal) {
 	w.portalsMu.Lock()
 	defer w.portalsMu.Unlock()
 
@@ -235,7 +235,7 @@ func (w *Watcher) buildRoutes() http.Handler {
 		w.portalsMu.RUnlock()
 
 		if !ok {
-			log.Debug().Str("host", req.Host).Msg("Portal not found")
+			log.Debug().Str("host", req.Host).Msg("APIPortal not found")
 			rw.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -251,7 +251,7 @@ func (w *Watcher) buildRoutes() http.Handler {
 		if err := w.indexTemplate.Execute(rw, data); err != nil {
 			log.Error().Err(err).
 				Str("host", req.Host).
-				Str("portal_name", data.Name).
+				Str("api_portal_name", data.Name).
 				Msg("Unable to execute index template")
 
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -278,7 +278,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 
 		if err := json.NewEncoder(rw).Encode(apis); err != nil {
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Msg("Encode APIs")
 		}
 	})
@@ -288,7 +288,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		u, found := urlByName[apiName]
 		if !found {
 			log.Debug().
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Msg("API not found")
 			rw.WriteHeader(http.StatusNotFound)
@@ -299,7 +299,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		r, err := http.NewRequestWithContext(req.Context(), http.MethodGet, u, http.NoBody)
 		if err != nil {
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Msg("New request")
@@ -312,7 +312,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		if err != nil {
 			rw.WriteHeader(http.StatusBadGateway)
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Msg("Do request")
@@ -324,7 +324,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		if resp.StatusCode < 200 || resp.StatusCode > 300 {
 			rw.WriteHeader(http.StatusBadGateway)
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Int("status_code", resp.StatusCode).
@@ -336,7 +336,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		var oas openapi3.T
 		if err := json.NewDecoder(resp.Body).Decode(&oas); err != nil {
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Msg("Decode open api spec")
@@ -346,7 +346,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 
 		if err := overrideServersAndSecurity(&oas, p, pathPrefixByName[apiName]); err != nil {
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Msg("Override servers and security")
@@ -358,7 +358,7 @@ func (w *Watcher) buildRoute(name string, p *api.Portal) http.Handler {
 		rw.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(rw).Encode(oas); err != nil {
 			log.Error().Err(err).
-				Str("portal_name", name).
+				Str("api_portal_name", name).
 				Str("api_name", apiName).
 				Str("url", u).
 				Msg("Write content")

@@ -160,11 +160,11 @@ func TestWatcher_OnDelete(t *testing.T) {
 	}
 }
 
-func createPortal(openAPISpecURL string) *hubv1alpha1.Portal {
+func createPortal(openAPISpecURL string) *hubv1alpha1.APIPortal {
 	_ = openAPISpecURL
-	portal := &hubv1alpha1.Portal{
+	portal := &hubv1alpha1.APIPortal{
 		ObjectMeta: metav1.ObjectMeta{Name: "my-portal"},
-		Spec:       hubv1alpha1.PortalSpec{},
+		Spec:       hubv1alpha1.APIPortalSpec{},
 	}
 	return portal
 }
