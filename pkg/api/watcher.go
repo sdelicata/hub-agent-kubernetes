@@ -51,7 +51,7 @@ const (
 	customDomainSecretNamePrefix = "hub-certificate-custom-domains"
 )
 
-// PlatformClient for the Portal service.
+// PlatformClient for the API service.
 type PlatformClient interface {
 	GetPortals(ctx context.Context) ([]Portal, error)
 	GetWildcardCertificate(ctx context.Context) (edgeingress.Certificate, error)
@@ -67,9 +67,9 @@ type WatcherConfig struct {
 	DevPortalServiceName    string
 	DevPortalPort           int
 
-	PortalSyncInterval time.Duration
-	CertSyncInterval   time.Duration
-	CertRetryInterval  time.Duration
+	APISyncInterval   time.Duration
+	CertSyncInterval  time.Duration
+	CertRetryInterval time.Duration
 }
 
 // Watcher watches hub portals and sync them with the cluster.
@@ -109,7 +109,7 @@ func NewWatcher(client PlatformClient, kubeClientSet clientset.Interface, kubeIn
 
 // Run runs Watcher.
 func (w *Watcher) Run(ctx context.Context) {
-	t := time.NewTicker(w.config.PortalSyncInterval)
+	t := time.NewTicker(w.config.APISyncInterval)
 	defer t.Stop()
 
 	certSyncInterval := time.After(w.config.CertSyncInterval)
@@ -124,7 +124,7 @@ func (w *Watcher) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("Stopping APIPortal watcher")
+			log.Info().Msg("Stopping API watcher")
 			return
 
 		case <-t.C:

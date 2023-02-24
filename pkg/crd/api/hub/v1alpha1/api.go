@@ -29,7 +29,6 @@ import (
 // +kubebuilder:printcolumn:name="PathPrefix",type=string,JSONPath=`.pathPrefix`
 // +kubebuilder:printcolumn:name="ServiceName",type=string,JSONPath=`.service.name`
 // +kubebuilder:printcolumn:name="ServicePort",type=string,JSONPath=`.service.port`
-// +kubebuilder:printcolumn:name="OpenAPISpecURL",type=string,JSONPath=`.status.openApiSpecUrl`
 type API struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional

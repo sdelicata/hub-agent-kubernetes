@@ -90,7 +90,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// review reviews a CREATE/UPDATE/DELETE operation on a APIPortal. It makes sure the operation is not based on
+// review reviews a CREATE/UPDATE/DELETE operation on an APIPortal. It makes sure the operation is not based on
 // an outdated version of the resource. As the backend is the source of truth, we cannot permit that.
 func (h *Handler) review(ctx context.Context, req *admv1.AdmissionRequest) ([]byte, error) {
 	logger := log.Ctx(ctx)

@@ -44,7 +44,7 @@ import (
 // Also, if multiple clients of this watcher are not interested in the same resources
 // add a parameter to NewWatcher to subscribe only to a subset of events.
 
-// Watcher watches access control policy resources and builds configurations out of them.
+// Watcher watches APIPortals resources and builds configurations out of them.
 type Watcher struct {
 	portalsMu   sync.RWMutex
 	portals     map[string]api.Portal

@@ -186,7 +186,7 @@ func Test_WatcherRun(t *testing.T) {
 				TraefikTunnelEntryPoint: "tunnel-entrypoint",
 				DevPortalServiceName:    "dev-portal-service-name",
 				DevPortalPort:           8080,
-				PortalSyncInterval:      time.Millisecond,
+				APISyncInterval:         time.Millisecond,
 				CertSyncInterval:        time.Millisecond,
 				CertRetryInterval:       time.Millisecond,
 			})

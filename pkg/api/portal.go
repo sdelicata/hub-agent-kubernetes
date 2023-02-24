@@ -53,7 +53,7 @@ type CustomDomain struct {
 	Verified bool   `json:"verified"`
 }
 
-// Resource builds the v1alpha1 Portal resource.
+// Resource builds the v1alpha1 APIPortal resource.
 func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 	var customDomains []string
 	for _, domain := range p.CustomDomains {
@@ -134,7 +134,7 @@ type portalHash struct {
 	APIHubDomain     string   `json:"apiHubDomain"`
 }
 
-// HashPortal generates the hash of the portal.
+// HashPortal generates the hash of the APIPortal.
 func HashPortal(p *hubv1alpha1.APIPortal) (string, error) {
 	ph := portalHash{
 		Description:      p.Spec.Description,

@@ -177,7 +177,7 @@ func webhookAdmission(ctx context.Context, cliCtx *cli.Context, platformClient *
 		TraefikTunnelEntryPoint: cliCtx.String(flagTraefikTunnelEntryPoint),
 		DevPortalServiceName:    cliCtx.String(flagDevPortalServiceName),
 		DevPortalPort:           cliCtx.Int(flagDevPortalPort),
-		PortalSyncInterval:      time.Minute,
+		APISyncInterval:         time.Minute,
 		CertSyncInterval:        time.Hour,
 		CertRetryInterval:       time.Minute,
 	}
@@ -276,7 +276,7 @@ func setupAdmissionHandlers(ctx context.Context, platformClient *platform.Client
 
 	apiAvailable, err := isAPIAvailable(kubeClientSet)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("portal available: %w", err)
+		return nil, nil, nil, fmt.Errorf("API available: %w", err)
 	}
 
 	err = startHubInformer(ctx, hubInformer, ingClassWatcher, acpEventHandler, apiAvailable)
@@ -349,6 +349,8 @@ func startHubInformer(ctx context.Context, hubInformer hubinformer.SharedInforme
 
 	if apiAvailable {
 		hubInformer.Hub().V1alpha1().APIPortals().Informer()
+		hubInformer.Hub().V1alpha1().APICollections().Informer()
+		hubInformer.Hub().V1alpha1().APIs().Informer()
 	}
 
 	hubInformer.Start(ctx.Done())
