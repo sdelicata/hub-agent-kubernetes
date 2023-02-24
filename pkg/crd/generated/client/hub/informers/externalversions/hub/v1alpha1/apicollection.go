@@ -32,58 +32,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// APIGroupInformer provides access to a shared informer and lister for
-// APIGroups.
-type APIGroupInformer interface {
+// APICollectionInformer provides access to a shared informer and lister for
+// APICollections.
+type APICollectionInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.APIGroupLister
+	Lister() v1alpha1.APICollectionLister
 }
 
-type aPIGroupInformer struct {
+type aPICollectionInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewAPIGroupInformer constructs a new informer for APIGroup type.
+// NewAPICollectionInformer constructs a new informer for APICollection type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewAPIGroupInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredAPIGroupInformer(client, resyncPeriod, indexers, nil)
+func NewAPICollectionInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredAPICollectionInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredAPIGroupInformer constructs a new informer for APIGroup type.
+// NewFilteredAPICollectionInformer constructs a new informer for APICollection type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredAPIGroupInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredAPICollectionInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.HubV1alpha1().APIGroups().List(context.TODO(), options)
+				return client.HubV1alpha1().APICollections().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.HubV1alpha1().APIGroups().Watch(context.TODO(), options)
+				return client.HubV1alpha1().APICollections().Watch(context.TODO(), options)
 			},
 		},
-		&hubv1alpha1.APIGroup{},
+		&hubv1alpha1.APICollection{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *aPIGroupInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredAPIGroupInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *aPICollectionInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredAPICollectionInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *aPIGroupInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&hubv1alpha1.APIGroup{}, f.defaultInformer)
+func (f *aPICollectionInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&hubv1alpha1.APICollection{}, f.defaultInformer)
 }
 
-func (f *aPIGroupInformer) Lister() v1alpha1.APIGroupLister {
-	return v1alpha1.NewAPIGroupLister(f.Informer().GetIndexer())
+func (f *aPICollectionInformer) Lister() v1alpha1.APICollectionLister {
+	return v1alpha1.NewAPICollectionLister(f.Informer().GetIndexer())
 }

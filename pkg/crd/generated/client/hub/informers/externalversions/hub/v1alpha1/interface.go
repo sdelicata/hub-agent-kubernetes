@@ -26,8 +26,8 @@ import (
 type Interface interface {
 	// APIs returns a APIInformer.
 	APIs() APIInformer
-	// APIGroups returns a APIGroupInformer.
-	APIGroups() APIGroupInformer
+	// APICollections returns a APICollectionInformer.
+	APICollections() APICollectionInformer
 	// APIPortals returns a APIPortalInformer.
 	APIPortals() APIPortalInformer
 	// AccessControlPolicies returns a AccessControlPolicyInformer.
@@ -54,9 +54,9 @@ func (v *version) APIs() APIInformer {
 	return &aPIInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// APIGroups returns a APIGroupInformer.
-func (v *version) APIGroups() APIGroupInformer {
-	return &aPIGroupInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+// APICollections returns a APICollectionInformer.
+func (v *version) APICollections() APICollectionInformer {
+	return &aPICollectionInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // APIPortals returns a APIPortalInformer.

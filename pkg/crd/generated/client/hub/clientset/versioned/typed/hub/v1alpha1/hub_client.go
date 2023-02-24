@@ -27,7 +27,7 @@ import (
 type HubV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	APIsGetter
-	APIGroupsGetter
+	APICollectionsGetter
 	APIPortalsGetter
 	AccessControlPoliciesGetter
 	EdgeIngressesGetter
@@ -43,8 +43,8 @@ func (c *HubV1alpha1Client) APIs(namespace string) APIInterface {
 	return newAPIs(c, namespace)
 }
 
-func (c *HubV1alpha1Client) APIGroups() APIGroupInterface {
-	return newAPIGroups(c)
+func (c *HubV1alpha1Client) APICollections() APICollectionInterface {
+	return newAPICollections(c)
 }
 
 func (c *HubV1alpha1Client) APIPortals() APIPortalInterface {

@@ -28,8 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// APIGroup is a group of APIs exposed within a portal.
-type APIGroup struct {
+// Collection is a collection of APIs exposed within an APIPortal.
+type Collection struct {
 	Name        string               `json:"name"`
 	PathPrefix  string               `json:"pathPrefix,omitempty"`
 	APISelector metav1.LabelSelector `json:"apiSelector"`
@@ -40,50 +40,50 @@ type APIGroup struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// Resource builds the v1alpha1 APIGroup resource.
-func (ag *APIGroup) Resource() (*hubv1alpha1.APIGroup, error) {
-	apiGroup := &hubv1alpha1.APIGroup{
+// Resource builds the v1alpha1 Collection resource.
+func (c *Collection) Resource() (*hubv1alpha1.APICollection, error) {
+	collection := &hubv1alpha1.APICollection{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "hub.traefik.io/v1alpha1",
-			Kind:       "APIGroup",
+			Kind:       "APICollection",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ag.Name,
+			Name: c.Name,
 		},
-		Spec: hubv1alpha1.APIGroupSpec{
-			PathPrefix:  ag.PathPrefix,
-			APISelector: ag.APISelector,
+		Spec: hubv1alpha1.APICollectionSpec{
+			PathPrefix:  c.PathPrefix,
+			APISelector: c.APISelector,
 		},
-		Status: hubv1alpha1.APIGroupStatus{
-			Version:  ag.Version,
+		Status: hubv1alpha1.APICollectionStatus{
+			Version:  c.Version,
 			SyncedAt: metav1.Now(),
 		},
 	}
 
-	apiGroupHash, err := hashAPIGroup(apiGroup)
+	collectionHash, err := hashCollection(collection)
 	if err != nil {
-		return nil, fmt.Errorf("compute api group hash: %w", err)
+		return nil, fmt.Errorf("compute APICollection hash: %w", err)
 	}
 
-	apiGroup.Status.Hash = apiGroupHash
+	collection.Status.Hash = collectionHash
 
-	return apiGroup, nil
+	return collection, nil
 }
 
-type apiGroupHash struct {
+type collectionHash struct {
 	PathPrefix  string               `json:"pathPrefix,omitempty"`
 	APISelector metav1.LabelSelector `json:"apiSelector"`
 }
 
-func hashAPIGroup(ag *hubv1alpha1.APIGroup) (string, error) {
-	ah := apiGroupHash{
-		PathPrefix:  ag.Spec.PathPrefix,
-		APISelector: ag.Spec.APISelector,
+func hashCollection(c *hubv1alpha1.APICollection) (string, error) {
+	ch := collectionHash{
+		PathPrefix:  c.Spec.PathPrefix,
+		APISelector: c.Spec.APISelector,
 	}
 
-	b, err := json.Marshal(ah)
+	b, err := json.Marshal(ch)
 	if err != nil {
-		return "", fmt.Errorf("encode api group: %w", err)
+		return "", fmt.Errorf("encode APICollection: %w", err)
 	}
 
 	hash := sha1.New() //nolint:gosec // Used for content diffing, no impact on security

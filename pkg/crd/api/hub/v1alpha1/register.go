@@ -54,8 +54,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&APIPortalList{},
 		&API{},
 		&APIList{},
-		&APIGroup{},
-		&APIGroupList{},
+		&APICollection{},
+		&APICollectionList{},
 	)
 
 	metav1.AddToGroupVersion(

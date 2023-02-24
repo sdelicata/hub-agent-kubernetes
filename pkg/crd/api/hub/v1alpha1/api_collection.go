@@ -25,48 +25,48 @@ import (
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// APIGroup defines a group of APIs exposed within a portal.
+// APICollection defines a collection of APIs exposed within an APIPortal.
 // +kubebuilder:printcolumn:name="PathPrefix",type=string,JSONPath=`.pathPrefix`
 // +kubebuilder:printcolumn:name="APISelector",type=string,JSONPath=`.apiSelector`
 // +kubebuilder:resource:scope=Cluster
-type APIGroup struct {
+type APICollection struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec APIGroupSpec `json:"spec,omitempty"`
+	Spec APICollectionSpec `json:"spec,omitempty"`
 
-	// The current status of this APIGroup.
+	// The current status of this APICollection.
 	// +optional
-	Status APIGroupStatus `json:"status,omitempty"`
+	Status APICollectionStatus `json:"status,omitempty"`
 }
 
-// APIGroupSpec configures an APIGroup.
-type APIGroupSpec struct {
+// APICollectionSpec configures an APICollection.
+type APICollectionSpec struct {
 	// +optional
 	PathPrefix string `json:"pathPrefix,omitempty"`
-	// APISelector selects the APIs which are member of this APIGroup object.
-	// Multiple APIGroups can select the same set of APIs.
+	// APISelector selects the APIs which are member of this APICollection object.
+	// Multiple APICollections can select the same set of APIs.
 	// This field is NOT optional and follows standard label selector semantics.
 	// An empty APISelector matches any API.
 	APISelector metav1.LabelSelector `json:"apiSelector"`
 }
 
-// APIGroupStatus is the status of an APIGroup.
-type APIGroupStatus struct {
+// APICollectionStatus is the status of an APICollection.
+type APICollectionStatus struct {
 	Version  string      `json:"version,omitempty"`
 	SyncedAt metav1.Time `json:"syncedAt,omitempty"`
-	// Hash is a hash representing the APIGroup.
+	// Hash is a hash representing the APICollection.
 	Hash string `json:"hash,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// APIGroupList defines a list of APIGroups.
-type APIGroupList struct {
+// APICollectionList defines a list of APICollections.
+type APICollectionList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []APIGroup `json:"items"`
+	Items []APICollection `json:"items"`
 }

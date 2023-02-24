@@ -26,9 +26,9 @@ type APIListerExpansion interface{}
 // APINamespaceLister.
 type APINamespaceListerExpansion interface{}
 
-// APIGroupListerExpansion allows custom methods to be added to
-// APIGroupLister.
-type APIGroupListerExpansion interface{}
+// APICollectionListerExpansion allows custom methods to be added to
+// APICollectionLister.
+type APICollectionListerExpansion interface{}
 
 // APIPortalListerExpansion allows custom methods to be added to
 // APIPortalLister.

@@ -32,8 +32,8 @@ func (c *FakeHubV1alpha1) APIs(namespace string) v1alpha1.APIInterface {
 	return &FakeAPIs{c, namespace}
 }
 
-func (c *FakeHubV1alpha1) APIGroups() v1alpha1.APIGroupInterface {
-	return &FakeAPIGroups{c}
+func (c *FakeHubV1alpha1) APICollections() v1alpha1.APICollectionInterface {
+	return &FakeAPICollections{c}
 }
 
 func (c *FakeHubV1alpha1) APIPortals() v1alpha1.APIPortalInterface {

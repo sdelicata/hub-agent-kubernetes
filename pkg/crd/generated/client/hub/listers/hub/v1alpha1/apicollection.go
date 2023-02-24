@@ -25,44 +25,44 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// APIGroupLister helps list APIGroups.
+// APICollectionLister helps list APICollections.
 // All objects returned here must be treated as read-only.
-type APIGroupLister interface {
-	// List lists all APIGroups in the indexer.
+type APICollectionLister interface {
+	// List lists all APICollections in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.APIGroup, err error)
-	// Get retrieves the APIGroup from the index for a given name.
+	List(selector labels.Selector) (ret []*v1alpha1.APICollection, err error)
+	// Get retrieves the APICollection from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.APIGroup, error)
-	APIGroupListerExpansion
+	Get(name string) (*v1alpha1.APICollection, error)
+	APICollectionListerExpansion
 }
 
-// aPIGroupLister implements the APIGroupLister interface.
-type aPIGroupLister struct {
+// aPICollectionLister implements the APICollectionLister interface.
+type aPICollectionLister struct {
 	indexer cache.Indexer
 }
 
-// NewAPIGroupLister returns a new APIGroupLister.
-func NewAPIGroupLister(indexer cache.Indexer) APIGroupLister {
-	return &aPIGroupLister{indexer: indexer}
+// NewAPICollectionLister returns a new APICollectionLister.
+func NewAPICollectionLister(indexer cache.Indexer) APICollectionLister {
+	return &aPICollectionLister{indexer: indexer}
 }
 
-// List lists all APIGroups in the indexer.
-func (s *aPIGroupLister) List(selector labels.Selector) (ret []*v1alpha1.APIGroup, err error) {
+// List lists all APICollections in the indexer.
+func (s *aPICollectionLister) List(selector labels.Selector) (ret []*v1alpha1.APICollection, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.APIGroup))
+		ret = append(ret, m.(*v1alpha1.APICollection))
 	})
 	return ret, err
 }
 
-// Get retrieves the APIGroup from the index for a given name.
-func (s *aPIGroupLister) Get(name string) (*v1alpha1.APIGroup, error) {
+// Get retrieves the APICollection from the index for a given name.
+func (s *aPICollectionLister) Get(name string) (*v1alpha1.APICollection, error) {
 	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("apigroup"), name)
+		return nil, errors.NewNotFound(v1alpha1.Resource("apicollection"), name)
 	}
-	return obj.(*v1alpha1.APIGroup), nil
+	return obj.(*v1alpha1.APICollection), nil
 }
