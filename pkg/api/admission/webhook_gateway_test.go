@@ -127,7 +127,7 @@ func TestGatewayHandler_ServeHTTP_createOperation(t *testing.T) {
 				URLs:          "https://api.foo.example.com,https://brave-lion-123.hub-traefik.io",
 				HubDomain:     "brave-lion-123.hub-traefik.io",
 				CustomDomains: []string{"api.foo.example.com"},
-				Hash:          "HW2jEpD0BlO5gGcYTetSRFw0uNw=",
+				Hash:          "oGEXVxJoA7mBnoZ+3239Vw/UGSQ=",
 			}},
 		}),
 	}
@@ -301,7 +301,7 @@ func TestGatewayHandler_ServeHTTP_updateOperation(t *testing.T) {
 				HubDomain:     "brave-lion-123.hub-traefik.io",
 				CustomDomains: []string{"api.new.example.com"},
 				URLs:          "https://api.new.example.com,https://brave-lion-123.hub-traefik.io",
-				Hash:          "skFJQdto3qYYqfp63MtgWXzpNNs=",
+				Hash:          "LiUOfnP7nvnIp5wWi4OybvUYBVE=",
 			}},
 		}),
 	}

@@ -22,10 +22,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	hubv1alpha1 "github.com/traefik/hub-agent-kubernetes/pkg/crd/api/hub/v1alpha1"
+	"golang.org/x/exp/constraints"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -100,7 +102,7 @@ func (g *Gateway) Resource() (*hubv1alpha1.APIGateway, error) {
 }
 
 type gatewayHash struct {
-	Labels        map[string]string `json:"labels,omitempty"`
+	Labels        sortedMap[string] `json:"labels,omitempty"`
 	Accesses      []string          `json:"accesses,omitempty"`
 	HubDomain     string            `json:"hubDomain,omitempty"`
 	CustomDomains []string          `json:"customDomains,omitempty"`
@@ -109,7 +111,7 @@ type gatewayHash struct {
 // HashGateway generates the hash of the APIGateway.
 func HashGateway(p *hubv1alpha1.APIGateway) (string, error) {
 	gh := gatewayHash{
-		Labels:        p.Labels,
+		Labels:        newSortedMap(p.Labels),
 		Accesses:      p.Spec.APIAccesses,
 		HubDomain:     p.Status.HubDomain,
 		CustomDomains: p.Spec.CustomDomains,
@@ -124,4 +126,26 @@ func HashGateway(p *hubv1alpha1.APIGateway) (string, error) {
 	hash.Write(b)
 
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil)), nil
+}
+
+// sortedMap is a map sorted by key. This map can safely be used for computing a hash.
+type sortedMap[T constraints.Ordered] []keyValue[T]
+
+type keyValue[T constraints.Ordered] struct {
+	Key   T
+	Value any
+}
+
+// newSortedMap creates a new sorted version of the given map.
+func newSortedMap[T constraints.Ordered](source map[T]string) sortedMap[T] {
+	var keyValues sortedMap[T]
+	for key, value := range source {
+		keyValues = append(keyValues, keyValue[T]{Key: key, Value: value})
+	}
+
+	sort.Slice(keyValues, func(i, j int) bool {
+		return keyValues[i].Key < keyValues[j].Key
+	})
+
+	return keyValues
 }
