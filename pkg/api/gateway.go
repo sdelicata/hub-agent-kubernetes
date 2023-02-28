@@ -29,13 +29,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Portal is a WebUI that expose a set of OpenAPI specs.
-type Portal struct {
-	WorkspaceID string `json:"workspaceId"`
-	ClusterID   string `json:"clusterId"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Gateway     string `json:"gateway,omitempty"`
+// Gateway is a gateway that expose a set of APIs.
+type Gateway struct {
+	WorkspaceID string            `json:"workspaceId"`
+	ClusterID   string            `json:"clusterId"`
+	Name        string            `json:"name"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Accesses    []string          `json:"accesses,omitempty"`
 
 	Version string `json:"version"`
 
@@ -46,28 +46,21 @@ type Portal struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// CustomDomain holds domain information.
-type CustomDomain struct {
-	Name     string `json:"name"`
-	Verified bool   `json:"verified"`
-}
-
-// Resource builds the v1alpha1 APIPortal resource.
-func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
+// Resource builds the v1alpha1 APIGateway resource.
+func (g *Gateway) Resource() (*hubv1alpha1.APIGateway, error) {
 	var customDomains []string
-	for _, domain := range p.CustomDomains {
+	for _, domain := range g.CustomDomains {
 		customDomains = append(customDomains, domain.Name)
 	}
 
-	spec := hubv1alpha1.APIPortalSpec{
-		Description:   p.Description,
-		APIGateway:    p.Gateway,
+	spec := hubv1alpha1.APIGatewaySpec{
+		APIAccesses:   g.Accesses,
 		CustomDomains: customDomains,
 	}
 
 	var urls []string
 	var verifiedCustomDomains []string
-	for _, customDomain := range p.CustomDomains {
+	for _, customDomain := range g.CustomDomains {
 		if !customDomain.Verified {
 			continue
 		}
@@ -75,55 +68,56 @@ func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 		urls = append(urls, "https://"+customDomain.Name)
 		verifiedCustomDomains = append(verifiedCustomDomains, customDomain.Name)
 	}
-	if p.HubDomain != "" {
-		urls = append(urls, "https://"+p.HubDomain)
-	}
+	urls = append(urls, "https://"+g.HubDomain)
 
-	portal := &hubv1alpha1.APIPortal{
+	gateway := &hubv1alpha1.APIGateway{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "hub.traefik.io/v1alpha1",
-			Kind:       "APIPortal",
+			Kind:       "APIGateway",
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: p.Name},
-		Spec:       spec,
-		Status: hubv1alpha1.APIPortalStatus{
-			Version:       p.Version,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   g.Name,
+			Labels: g.Labels,
+		},
+		Spec: spec,
+		Status: hubv1alpha1.APIGatewayStatus{
+			Version:       g.Version,
 			SyncedAt:      metav1.Now(),
-			HubDomain:     p.HubDomain,
+			HubDomain:     g.HubDomain,
 			CustomDomains: verifiedCustomDomains,
 			URLs:          strings.Join(urls, ","),
 		},
 	}
 
-	portalHash, err := HashPortal(portal)
+	gatewayHash, err := HashGateway(gateway)
 	if err != nil {
-		return nil, fmt.Errorf("compute APIPortal hash: %w", err)
+		return nil, fmt.Errorf("compute APIGateway hash: %w", err)
 	}
 
-	portal.Status.Hash = portalHash
+	gateway.Status.Hash = gatewayHash
 
-	return portal, nil
+	return gateway, nil
 }
 
-type portalHash struct {
-	Description   string   `json:"description,omitempty"`
-	Gateway       string   `json:"gateway,omitempty"`
-	HubDomain     string   `json:"hubDomain,omitempty"`
-	CustomDomains []string `json:"customDomains,omitempty"`
+type gatewayHash struct {
+	Labels        map[string]string `json:"labels,omitempty"`
+	Accesses      []string          `json:"accesses,omitempty"`
+	HubDomain     string            `json:"hubDomain,omitempty"`
+	CustomDomains []string          `json:"customDomains,omitempty"`
 }
 
-// HashPortal generates the hash of the APIPortal.
-func HashPortal(p *hubv1alpha1.APIPortal) (string, error) {
-	ph := portalHash{
-		Description:   p.Spec.Description,
-		Gateway:       p.Spec.APIGateway,
+// HashGateway generates the hash of the APIGateway.
+func HashGateway(p *hubv1alpha1.APIGateway) (string, error) {
+	gh := gatewayHash{
+		Labels:        p.Labels,
+		Accesses:      p.Spec.APIAccesses,
 		HubDomain:     p.Status.HubDomain,
 		CustomDomains: p.Spec.CustomDomains,
 	}
 
-	b, err := json.Marshal(ph)
+	b, err := json.Marshal(gh)
 	if err != nil {
-		return "", fmt.Errorf("encode APIPortal: %w", err)
+		return "", fmt.Errorf("encode APIGateway: %w", err)
 	}
 
 	hash := sha1.New() //nolint:gosec // Used for content diffing, no impact on security
