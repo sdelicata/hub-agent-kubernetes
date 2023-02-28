@@ -78,10 +78,6 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		Gateway:       testPortalSpec.APIGateway,
 		CustomDomains: testPortalSpec.CustomDomains,
 	}
-	wantCustomDomains := []api.CustomDomain{
-		{Name: "foo.example.com", Verified: true},
-		{Name: "bar.example.com", Verified: false},
-	}
 	createdPortal := &api.Portal{
 		WorkspaceID:   "workspace-id",
 		ClusterID:     "cluster-id",
@@ -89,7 +85,7 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 		Description:   "My awesome portal",
 		Gateway:       "gateway-1",
 		Version:       "version-1",
-		CustomDomains: wantCustomDomains,
+		CustomDomains: []string{"foo.example.com", "bar.example.com"},
 		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
 		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
 	}
@@ -121,8 +117,8 @@ func TestHandler_ServeHTTP_createOperation(t *testing.T) {
 			{Op: "replace", Path: "/status", Value: hubv1alpha1.APIPortalStatus{
 				Version:       "version-1",
 				SyncedAt:      now,
-				URLs:          "https://foo.example.com",
-				CustomDomains: []string{"foo.example.com"},
+				URLs:          "https://foo.example.com,https://bar.example.com",
+				CustomDomains: []string{"foo.example.com", "bar.example.com"},
 				Hash:          "3ACiTUYBBU60DUwbouDpJNnDHwY=",
 			}},
 		}),
@@ -246,9 +242,6 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		HubDomain:     newPortal.Status.HubDomain,
 		CustomDomains: newPortal.Spec.CustomDomains,
 	}
-	wantCustomDomains := []api.CustomDomain{
-		{Name: "foo.example.com", Verified: true},
-	}
 	updatedPortal := &api.Portal{
 		WorkspaceID:   "workspace-id",
 		ClusterID:     "cluster-id",
@@ -257,7 +250,7 @@ func TestHandler_ServeHTTP_updateOperation(t *testing.T) {
 		Gateway:       "updated-gateway",
 		Version:       "version-4",
 		HubDomain:     "majestic-beaver-123.hub-traefik.io",
-		CustomDomains: wantCustomDomains,
+		CustomDomains: []string{"foo.example.com"},
 		CreatedAt:     time.Now().Add(-time.Hour).UTC().Truncate(time.Millisecond),
 		UpdatedAt:     time.Now().UTC().Truncate(time.Millisecond),
 	}

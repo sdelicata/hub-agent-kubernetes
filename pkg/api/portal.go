@@ -29,18 +29,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Portal is a WebUI that expose a set of OpenAPI specs.
+// Portal is a WebUI that exposes a set of OpenAPI specs.
 type Portal struct {
 	WorkspaceID string `json:"workspaceId"`
 	ClusterID   string `json:"clusterId"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
-	Gateway     string `json:"gateway,omitempty"`
+	Gateway     string `json:"gateway"`
 
 	Version string `json:"version"`
 
-	HubDomain     string         `json:"hubDomain,omitempty"`
-	CustomDomains []CustomDomain `json:"customDomains,omitempty"`
+	HubDomain     string   `json:"hubDomain,omitempty"`
+	CustomDomains []string `json:"customDomains,omitempty"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -54,26 +54,15 @@ type CustomDomain struct {
 
 // Resource builds the v1alpha1 APIPortal resource.
 func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
-	var customDomains []string
-	for _, domain := range p.CustomDomains {
-		customDomains = append(customDomains, domain.Name)
-	}
-
 	spec := hubv1alpha1.APIPortalSpec{
 		Description:   p.Description,
 		APIGateway:    p.Gateway,
-		CustomDomains: customDomains,
+		CustomDomains: p.CustomDomains,
 	}
 
 	var urls []string
-	var verifiedCustomDomains []string
 	for _, customDomain := range p.CustomDomains {
-		if !customDomain.Verified {
-			continue
-		}
-
-		urls = append(urls, "https://"+customDomain.Name)
-		verifiedCustomDomains = append(verifiedCustomDomains, customDomain.Name)
+		urls = append(urls, "https://"+customDomain)
 	}
 	if p.HubDomain != "" {
 		urls = append(urls, "https://"+p.HubDomain)
@@ -90,7 +79,7 @@ func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 			Version:       p.Version,
 			SyncedAt:      metav1.Now(),
 			HubDomain:     p.HubDomain,
-			CustomDomains: verifiedCustomDomains,
+			CustomDomains: p.CustomDomains,
 			URLs:          strings.Join(urls, ","),
 		},
 	}
@@ -107,7 +96,7 @@ func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 
 type portalHash struct {
 	Description   string   `json:"description,omitempty"`
-	Gateway       string   `json:"gateway,omitempty"`
+	Gateway       string   `json:"gateway"`
 	HubDomain     string   `json:"hubDomain,omitempty"`
 	CustomDomains []string `json:"customDomains,omitempty"`
 }

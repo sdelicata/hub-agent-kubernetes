@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Gateway is a gateway that expose a set of APIs.
+// Gateway is a gateway that exposes a set of APIs.
 type Gateway struct {
 	WorkspaceID string            `json:"workspaceId"`
 	ClusterID   string            `json:"clusterId"`

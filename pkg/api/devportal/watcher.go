@@ -175,21 +175,14 @@ func (w *Watcher) updatePortalsFromCRD(p *hubv1alpha1.APIPortal) {
 	w.portalsMu.Lock()
 	defer w.portalsMu.Unlock()
 
-	var verifiedCustomDomains []api.CustomDomain
-	for _, customDomain := range p.Status.CustomDomains {
-		verifiedCustomDomains = append(verifiedCustomDomains, api.CustomDomain{
-			Name:     customDomain,
-			Verified: true,
-		})
-	}
-
 	hubDomain := p.Status.HubDomain
 
 	pc := api.Portal{
 		Name:          p.Name,
 		Description:   p.Spec.Description,
+		Gateway:       p.Spec.APIGateway,
 		HubDomain:     hubDomain,
-		CustomDomains: verifiedCustomDomains,
+		CustomDomains: p.Spec.CustomDomains,
 	}
 
 	w.portals[p.Name] = pc

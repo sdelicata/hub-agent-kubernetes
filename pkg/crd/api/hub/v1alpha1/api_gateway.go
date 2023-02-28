@@ -25,7 +25,7 @@ import (
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// APIGateway defines a gateway that expose APIs.
+// APIGateway defines a gateway that exposes APIs.
 // +kubebuilder:printcolumn:name="URLs",type=string,JSONPath=`.status.urls`
 // +kubebuilder:resource:scope=Cluster
 type APIGateway struct {

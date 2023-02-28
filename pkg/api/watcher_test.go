@@ -78,10 +78,9 @@ func Test_WatcherRun(t *testing.T) {
 			platformPortal: Portal{
 				Name:    "new-portal",
 				Version: "version-1",
-				CustomDomains: []CustomDomain{
-					{Name: "hello.example.com", Verified: true},
-					{Name: "welcome.example.com", Verified: true},
-					{Name: "not-verified.example.com", Verified: false},
+				CustomDomains: []string{
+					"hello.example.com",
+					"welcome.example.com",
 				},
 			},
 			wantPortals:       "testdata/new-portal/want.portals.yaml",

@@ -25,7 +25,7 @@ import (
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// APIPortal defines a portal that expose APIs.
+// APIPortal defines a portal that exposes APIs.
 // +kubebuilder:printcolumn:name="URLs",type=string,JSONPath=`.status.urls`
 // +kubebuilder:resource:scope=Cluster
 type APIPortal struct {
@@ -45,8 +45,7 @@ type APIPortal struct {
 type APIPortalSpec struct {
 	// +optional
 	Description string `json:"description,omitempty"`
-	// +optional
-	APIGateway string `json:"gateway,omitempty"`
+	APIGateway  string `json:"gateway"`
 	// CustomDomains are the custom domains under which the portal will be exposed.
 	// +optional
 	CustomDomains []string `json:"customDomains,omitempty"`
