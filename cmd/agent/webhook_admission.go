@@ -193,7 +193,7 @@ func webhookAdmission(ctx context.Context, cliCtx *cli.Context, platformClient *
 	router.Handle("/edge-ingress", edgeIngressAdmission)
 	if apiAdmission != nil {
 		router.Handle("/api", apiAdmission)
-		router.Handle("/gateway", gatewayAdmission)
+		router.Handle("/api-gateway", gatewayAdmission)
 	}
 	router.Handle("/ingress", acpAdmission)
 	router.Handle("/acp", webAdmissionACP)
