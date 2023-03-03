@@ -22,4 +22,4 @@ status:
     - api.welcome.example.com
     - api.new.example.com
   urls: "https://api.hello.example.com,https://api.welcome.example.com,https://api.new.example.com,https://brave-lion-123.hub-traefik.io"
-  hash: "PAqiSF2FaTgxFU2CLEOsVg=="
+  hash: "AB94OJ37b9va8kbB3TC/Tg=="

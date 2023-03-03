@@ -4,7 +4,7 @@ metadata:
   name: modified-portal
 spec:
   description: "My modified portal"
-  gateway: modified-gateway
+  apiGateway: modified-gateway
   customDomains:
     - "hello.example.com"
     - "new.example.com"
@@ -14,4 +14,4 @@ status:
     - hello.example.com
     - new.example.com
   urls: "https://hello.example.com,https://new.example.com"
-  hash: "V7FAW1et7sXxnHIslcZ/Ew=="
+  hash: "vXdlUYnknGuQeeln2xLW8g=="

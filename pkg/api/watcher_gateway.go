@@ -203,7 +203,7 @@ func (w *WatcherGateway) setupCertificates(ctx context.Context, gateway *hubv1al
 	return nil
 }
 
-func (w *WatcherGateway) upsertSecret(ctx context.Context, cert edgeingress.Certificate, name, namespace string, g *hubv1alpha1.APIGateway) error {
+func (w *WatcherGateway) upsertSecret(ctx context.Context, cert edgeingress.Certificate, name, namespace string, gateway *hubv1alpha1.APIGateway) error {
 	secret, err := w.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil && !kerror.IsNotFound(err) {
 		return fmt.Errorf("get secret: %w", err)
@@ -228,12 +228,12 @@ func (w *WatcherGateway) upsertSecret(ctx context.Context, cert edgeingress.Cert
 				"tls.key": cert.PrivateKey,
 			},
 		}
-		if g != nil {
+		if gateway != nil {
 			secret.OwnerReferences = []metav1.OwnerReference{{
 				APIVersion: "hub.traefik.io/v1alpha1",
 				Kind:       "APIGateway",
-				Name:       g.Name,
-				UID:        g.UID,
+				Name:       gateway.Name,
+				UID:        gateway.UID,
 			}}
 		}
 
@@ -251,12 +251,12 @@ func (w *WatcherGateway) upsertSecret(ctx context.Context, cert edgeingress.Cert
 	}
 
 	newOwners := secret.OwnerReferences
-	if g != nil {
+	if gateway != nil {
 		newOwners = appendOwnerReference(secret.OwnerReferences, metav1.OwnerReference{
 			APIVersion: "hub.traefik.io/v1alpha1",
 			Kind:       "APIGateway",
-			Name:       g.Name,
-			UID:        g.UID,
+			Name:       gateway.Name,
+			UID:        gateway.UID,
 		})
 	}
 	if bytes.Equal(secret.Data["tls.crt"], cert.Certificate) && len(secret.OwnerReferences) == len(newOwners) {
