@@ -49,7 +49,7 @@ func NewAPI(client apiService) *API {
 
 // Review reviews the admission request.
 func (a *API) Review(ctx context.Context, req *admv1.AdmissionRequest) ([]byte, error) {
-	logger := log.Ctx(ctx)
+	logger := log.Ctx(ctx).With().Str("reviewer", "API").Logger()
 
 	logger.Info().Msg("Reviewing API resource")
 	ctx = logger.WithContext(ctx)

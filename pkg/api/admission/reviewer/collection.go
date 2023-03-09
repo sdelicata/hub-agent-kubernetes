@@ -49,7 +49,7 @@ func NewCollection(client collectionService) *Collection {
 
 // Review reviews the admission request.
 func (c *Collection) Review(ctx context.Context, req *admv1.AdmissionRequest) ([]byte, error) {
-	logger := log.Ctx(ctx)
+	logger := log.Ctx(ctx).With().Str("reviewer", "APICollection").Logger()
 
 	logger.Info().Msg("Reviewing APICollection resource")
 	ctx = logger.WithContext(ctx)
