@@ -51,13 +51,16 @@ func Test_WatcherGatewayRun(t *testing.T) {
 		},
 	}
 
-	namespaces := []string{"agent-ns", "default", "my-ns"}
+	namespaces := []string{"agent-ns", "default", "books"}
 
 	tests := []struct {
 		desc             string
 		platformGateways []Gateway
 
 		clusterGateways    string
+		clusterAccesses    string
+		clusterCollections string
+		clusterAPIs        string
 		clusterIngresses   string
 		clusterSecrets     string
 		clusterMiddlewares string
@@ -72,8 +75,8 @@ func Test_WatcherGatewayRun(t *testing.T) {
 			platformGateways: []Gateway{
 				{
 					Name:      "new-gateway",
-					Labels:    map[string]string{"area": "users"},
-					Accesses:  []string{"users"},
+					Labels:    map[string]string{"area": "stores"},
+					Accesses:  []string{"products"},
 					Version:   "version-1",
 					HubDomain: "brave-lion-123.hub-traefik.io",
 					CustomDomains: []CustomDomain{
@@ -83,8 +86,13 @@ func Test_WatcherGatewayRun(t *testing.T) {
 					},
 				},
 			},
-			wantGateways: "testdata/new-gateway/want.gateways.yaml",
-			wantSecrets:  "testdata/new-gateway/want.secrets.yaml",
+			clusterAccesses:    "testdata/new-gateway/accesses.yaml",
+			clusterCollections: "testdata/new-gateway/collections.yaml",
+			clusterAPIs:        "testdata/new-gateway/apis.yaml",
+			wantGateways:       "testdata/new-gateway/want.gateways.yaml",
+			wantIngresses:      "testdata/new-gateway/want.ingresses.yaml",
+			wantSecrets:        "testdata/new-gateway/want.secrets.yaml",
+			wantMiddlewares:    "testdata/new-gateway/want.middlewares.yaml",
 		},
 		{
 			desc: "modified gateway on the platform needs to be updated on the cluster",
@@ -102,10 +110,14 @@ func Test_WatcherGatewayRun(t *testing.T) {
 					},
 				},
 			},
-			clusterGateways: "testdata/update-gateway/gateways.yaml",
-			clusterSecrets:  "testdata/update-gateway/secrets.yaml",
-			wantGateways:    "testdata/update-gateway/want.gateways.yaml",
-			wantSecrets:     "testdata/update-gateway/want.secrets.yaml",
+			clusterGateways:    "testdata/update-gateway/gateways.yaml",
+			clusterAccesses:    "testdata/update-gateway/accesses.yaml",
+			clusterCollections: "testdata/update-gateway/collections.yaml",
+			clusterAPIs:        "testdata/update-gateway/apis.yaml",
+			wantGateways:       "testdata/update-gateway/want.gateways.yaml",
+			wantIngresses:      "testdata/update-gateway/want.ingresses.yaml",
+			wantSecrets:        "testdata/update-gateway/want.secrets.yaml",
+			wantMiddlewares:    "testdata/update-gateway/want.middlewares.yaml",
 		},
 		{
 			desc:             "deleted gateway on the platform needs to be deleted on the cluster",
@@ -126,6 +138,9 @@ func Test_WatcherGatewayRun(t *testing.T) {
 			wantMiddlewares := loadFixtures[traefikv1alpha1.Middleware](t, test.wantMiddlewares)
 
 			clusterGateways := loadFixtures[hubv1alpha1.APIGateway](t, test.clusterGateways)
+			clusterAccesses := loadFixtures[hubv1alpha1.APIAccess](t, test.clusterAccesses)
+			clusterCollections := loadFixtures[hubv1alpha1.APICollection](t, test.clusterCollections)
+			clusterAPIs := loadFixtures[hubv1alpha1.API](t, test.clusterAPIs)
 			clusterIngresses := loadFixtures[netv1.Ingress](t, test.clusterIngresses)
 			clusterSecrets := loadFixtures[corev1.Secret](t, test.clusterSecrets)
 			clusterMiddlewares := loadFixtures[traefikv1alpha1.Middleware](t, test.clusterMiddlewares)
@@ -140,8 +155,17 @@ func Test_WatcherGatewayRun(t *testing.T) {
 			}
 
 			var hubObjects []runtime.Object
-			for _, clusterPortal := range clusterGateways {
-				hubObjects = append(hubObjects, clusterPortal.DeepCopy())
+			for _, clusterGateway := range clusterGateways {
+				hubObjects = append(hubObjects, clusterGateway.DeepCopy())
+			}
+			for _, clusterAccess := range clusterAccesses {
+				hubObjects = append(hubObjects, clusterAccess.DeepCopy())
+			}
+			for _, clusterCollection := range clusterCollections {
+				hubObjects = append(hubObjects, clusterCollection.DeepCopy())
+			}
+			for _, clusterAPI := range clusterAPIs {
+				hubObjects = append(hubObjects, clusterAPI.DeepCopy())
 			}
 
 			var traefikObjects []runtime.Object
@@ -159,6 +183,9 @@ func Test_WatcherGatewayRun(t *testing.T) {
 			hubInformer := hubinformer.NewSharedInformerFactory(hubClientSet, 0)
 
 			hubInformer.Hub().V1alpha1().APIGateways().Informer()
+			hubInformer.Hub().V1alpha1().APIAccesses().Informer()
+			hubInformer.Hub().V1alpha1().APICollections().Informer()
+			hubInformer.Hub().V1alpha1().APIs().Informer()
 			kubeInformer.Networking().V1().Ingresses().Informer()
 
 			hubInformer.Start(ctx.Done())
