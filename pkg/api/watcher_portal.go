@@ -274,16 +274,16 @@ func (w *WatcherPortal) upsertPortalEdgeIngress(ctx context.Context, portal *hub
 			Str("name", clusterIng.Name).
 			Str("namespace", w.config.AgentNamespace).
 			Msg("Edge ingress created")
-	}
+	} else {
+		clusterIng.Spec = ing.Spec
+		// Override Annotations and Labels in case new values are added in the future.
+		clusterIng.ObjectMeta.Annotations = ing.ObjectMeta.Annotations
+		clusterIng.ObjectMeta.Labels = ing.ObjectMeta.Labels
 
-	clusterIng.Spec = ing.Spec
-	// Override Annotations and Labels in case new values are added in the future.
-	clusterIng.ObjectMeta.Annotations = ing.ObjectMeta.Annotations
-	clusterIng.ObjectMeta.Labels = ing.ObjectMeta.Labels
-
-	clusterIng, err = w.hubClientSet.HubV1alpha1().EdgeIngresses(w.config.AgentNamespace).Update(ctx, clusterIng, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("update edge ingress: %w", err)
+		clusterIng, err = w.hubClientSet.HubV1alpha1().EdgeIngresses(w.config.AgentNamespace).Update(ctx, clusterIng, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("update edge ingress: %w", err)
+		}
 	}
 
 	// Set the APIPortal HubDomain with the domain obtained from the EdgeIngress.
