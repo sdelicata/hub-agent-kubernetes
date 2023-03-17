@@ -284,6 +284,11 @@ func (w *WatcherPortal) upsertPortalEdgeIngress(ctx context.Context, portal *hub
 		if err != nil {
 			return fmt.Errorf("update edge ingress: %w", err)
 		}
+
+		log.Debug().
+			Str("name", clusterIng.Name).
+			Str("namespace", w.config.AgentNamespace).
+			Msg("Edge ingress updated")
 	}
 
 	// Set the APIPortal HubDomain with the domain obtained from the EdgeIngress.
