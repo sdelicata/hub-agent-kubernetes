@@ -113,6 +113,7 @@ func (p *Portal) Resource() (*hubv1alpha1.APIPortal, error) {
 	return portal, nil
 }
 
+// UnverifiedCustomDomains returns the APIPortal unverified custom domains.
 func (p *Portal) UnverifiedCustomDomains() []string {
 	var unverified []string
 	for _, domain := range p.CustomDomains {
